@@ -20,25 +20,6 @@ class Itinerario:
     def __init__(self):
         self.paradas = []
 
-    def agregarParada(self, ciudad: Ciudad, fechaHora: datetime):
-        nuevaParada = {"ciudad": ciudad,
-                       "fechaHora": fechaHora}
-        self.paradas(nuevaParada)
-
-    def obtenerPartida(self):
-        return self.paradas[0]
-    
-    def obtenerLlegada(self):
-        return self.paradas[-1]
-    
-    def mostrarParadas(self):
-        for parada in self.paradas:
-            print("Ciudad: ", parada["ciudad"], end ="")
-            print("Fecha: ", parada["fechaHora"])
-
-
-
-
 
 class Servicio:
     def __init__(self, unidad: Unidad, calidad: str, precio: int, itinerario: Itinerario):
@@ -65,10 +46,6 @@ class Asiento:
 class Venta: 
     def __init__(self, fechaHora: datetime):
         self.fechaHora = fechaHora
-
-
-
-
 
 # interfaz 
 class MedioPago(ABC):
