@@ -32,8 +32,8 @@ class Ciudad:
         self.provincia = provincia 
 
 class Itinerario:
-    def __init__(self, paradas:list[Ciudad]= []):
-        self.paradas = paradas
+    def __init__(self, paradas: list[Ciudad] = None):
+        self.paradas = paradas if paradas is not None else []
 
 class Pasajero:
     def __init__(self, nombre: str, email: str, dni: int):
@@ -76,8 +76,6 @@ class Servicio:
     def agregarReserva(self, reserva: Reserva) -> bool:
         if not self.unidad.verificarAsientoLibre(reserva.obtenerAsientoNumero()):
             raise ValueError("El asiento ya está ocupado.")
-        if reserva in self.reservas:
-            raise ValueError("La reserva ya existe.")
         self.reservas.append(reserva)
         self.unidad.cambiarEstadoAsiento(reserva.obtenerAsientoNumero())
         return True
