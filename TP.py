@@ -74,10 +74,11 @@ class Servicio:
         self.itinerario = itinerario
 #Inserciones
     def agregarReserva(self, reserva: Reserva) -> bool:
-        if not self.unidad.verificarAsientoLibre(reserva.obtenerAsientoNumero()):
+        nroAsiento = reserva.obtenerAsientoNumero()
+        if not self.unidad.verificarAsientoLibre(nroAsiento):
             raise ValueError("El asiento ya está ocupado.")
         self.reservas.append(reserva)
-        self.unidad.cambiarEstadoAsiento(reserva.obtenerAsientoNumero())
+        self.unidad.cambiarEstadoAsiento(nroAsiento)
         return True
 #liberacion de reservas (se llama 30 min antes del viaje):
     def liberarAsientosReservados(self):
