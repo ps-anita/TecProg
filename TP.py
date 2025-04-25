@@ -16,33 +16,34 @@ class Ciudad:
         self.nombre = nombre 
         self.provincia = provincia 
 
-
+    def obtener_nombre(self):
+        return self.nombre
+        
 class Itinerario:
     def __init__(self):
         self.paradas = []
 
-    def agregarParada(self, ciudad: Ciudad, fechaHora: datetime):
-        nuevaParada = {"ciudad": ciudad,
-                       "fechaHora": fechaHora}
-        
-        index = self.__obtenerPosicion(fechaHora)
-        self.paradas.insert(index, nuevaParada)
+    def agregarParada(self, ciudad: Ciudad, fecha_hora: datetime):
+        nueva_parada = {"ciudad": ciudad,
+                       "fecha_hora": fecha_hora}
+        index = self.__obtener_posicion(fecha_hora)
+        self.paradas.insert(index, nueva_parada)
 
-    def obtenerPartida(self):
+    def obtener_partida(self):
         return self.paradas[0]
     
-    def obtenerLlegada(self):
+    def obtener_llegada(self):
         return self.paradas[-1]
     
-    def mostrarParadas(self):
+    def mostrar_paradas(self):
         for parada in self.paradas:
-            print("Ciudad: ", parada.get("ciudad").nombre, end =" --- ")
-            print("Fecha: ", parada.get("fechaHora"))
+            print("Ciudad: ", parada["ciudad"].obtener_nombre(), end =" --- ")
+            print("Fecha: ", parada["fecha_hora"])
 
-    def __obtenerPosicion(self, fechaHora):
+    def __obtener_posicion(self, fecha_hora):
         i = 0
         for parada in self.paradas:
-            if fechaHora > parada["fechaHora"]:
+            if fecha_hora > parada["fecha_hora"]:
                 i = i + 1
             else:
                 break
