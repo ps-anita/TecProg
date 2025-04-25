@@ -3,24 +3,24 @@ from abc import ABC, abstractmethod
 
 
 class Asiento:
-    def __init__(self, numero: int, ocupado: bool = False):
+    def __init__(self, numero: int, libre: bool = True):
         self.numero = numero
-        self.ocupado = ocupado
+        self.libre = libre
     def obtenerNumero(self):
         return self.numero
-    def verificarOcupacion(self)->bool:
-        return self.ocupado
+    def verificarLibre(self)->bool:
+        return self.libre
     def cambiarEstado(self):
-        self.ocupado = not self.ocupado
+        self.libre = not self.libre
 
 class Unidad:
     def __init__(self, patente: str):
         self.patente = patente
         self.asientos: list[Asiento] = [Asiento(i) for i in range(1, 51)] # genera lista con 50 asientos desocupados (list comprehension)
     def obtenerAsientosLibres(self)->list[Asiento]:
-        return [asiento for asiento in self.asientos if not asiento.verificarOcupacion()] #genera una lista con los asientos libres  (list comprehension)
+        return [asiento for asiento in self.asientos if asiento.verificarLibre()] #genera una lista con los asientos libres  (list comprehension)
     def verificarAsientoLibre(self, nroAsiento:int)->bool:
-        return not self.asientos[nroAsiento -1].verificarOcupacion()
+        return self.asientos[nroAsiento -1].verificarLibre()
     def cambiarEstadoAsiento(self,nroAsiento:int):
         self.asientos[nroAsiento - 1].cambiarEstado()
 
