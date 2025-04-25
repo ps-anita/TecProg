@@ -127,6 +127,6 @@ class Uala(MedioPago):
     
 ################################################ CLASE SISTEMA ################################
 
-class ArgentinaTUR:
+class ArgentinaTur:
     def __init__(self):
         self.sistemaActivo = True
