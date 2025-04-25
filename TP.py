@@ -32,7 +32,7 @@ class Reserva:
         self.fechaHora = fechaHora
 
 class Pasajero:
-    def __init__(self, nombre: str, apellido: str email: str, dni: int):
+    def __init__(self, nombre: str, apellido, str email: str, dni: int):
         self.nombre = nombre
         self.apellido = apellido
         self.email = email
@@ -89,7 +89,7 @@ class Uala(MedioPago):
     def validarPago(self):
         return self.servicio_externo.verificar_pago()
     def obtener_datos_pago(self):
-        return f"{self.nombre_metodo} - NombreTitular {self.nombre_titular} - Email {self.email}"
+        return f"{self.nombre_metodo} - Nombre Titular {self.nombre_titular} - Email {self.email}"
     
 class ServicioExternoPago:
     def __init__(self, m_pago:MedioPago):
