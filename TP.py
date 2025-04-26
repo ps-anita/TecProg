@@ -1,29 +1,27 @@
 from datetime import datetime, date
 from abc import ABC, abstractmethod
 
-
 class Asiento:
     def __init__(self, numero: int, libre: bool = True):
         self.numero = numero
         self.libre = libre
-    def obtenerNumero(self):
+    def obtener_numero(self):
         return self.numero
-    def verificarLibre(self)->bool:
+    def verificar_libre(self)->bool:
         return self.libre
-    def cambiarEstado(self):
+    def cambiar_estado(self):
         self.libre = not self.libre
 
 class Unidad:
     def __init__(self, patente: str):
         self.patente = patente
         self.asientos: list[Asiento] = [Asiento(i) for i in range(1, 51)] # genera lista con 50 asientos desocupados (list comprehension)
-    def obtenerAsientosLibres(self)->list[Asiento]:
-        return [asiento for asiento in self.asientos if asiento.verificarLibre()] #genera una lista con los asientos libres  (list comprehension)
-    def verificarAsientoLibre(self, nroAsiento:int)->bool:
-        return self.asientos[nroAsiento -1].verificarLibre()
-    def cambiarEstadoAsiento(self,nroAsiento:int):
-        self.asientos[nroAsiento - 1].cambiarEstado()
-
+    def obtener_asientos_libres(self)->list[Asiento]:
+        return [asiento for asiento in self.asientos if asiento.verificar_libre()] #genera una lista con los asientos libres  (list comprehension)
+    def verificar_asiento_libre(self, nro_asiento:int)->bool:
+        return self.asientos[nro_asiento -1].verificar_libre()
+    def cambiarEstadoAsiento(self,nro_asiento:int):
+        self.asientos[nro_asiento - 1].cambiar_estado()
 
 class Ciudad:
     def __init__(self, codigo: str, nombre: str, provincia: str):
@@ -42,22 +40,20 @@ class Pasajero:
         self.dni = dni
    
 class Reserva:
-    def __init__(self, fechaHora: datetime, asiento: Asiento, pasajero:Pasajero):
-        self.fechaHora = fechaHora
+    def __init__(self, fecha_hora: datetime, asiento: Asiento, pasajero:Pasajero):
+        self.fecha_hora = fecha_hora
         self.asiento = asiento
         self.pasajero = pasajero
     #consultas
-    def obtenerAsientoNumero(self):
-        return self.asiento.obtenerNumero()
+    def obtener_asiento_numero(self):
+        return self.asiento.obtener_numero()
     def obtenerFecha(self):
-        return self.fechaHora
-
+        return self.fecha_hora
 
 class Venta: 
-    def __init__(self, fechaHora: datetime, asiento: Asiento):
-        self.fechaHora = fechaHora
+    def __init__(self, fecha_hora: datetime, asiento: Asiento):
+        self.fecha_hora = fecha_hora
         self.asiento = asiento
-
 
 class Servicio:
     def __init__(self, unidad: Unidad, calidad: str, precio: float, itinerario: Itinerario):
@@ -68,27 +64,27 @@ class Servicio:
         self.ventas: list[Venta] = []
         self.reservas: list[Reserva] = []
 #Asignaciones
-    def asignarUnidad(self, unidad:Unidad):
+    def asignar_unidad(self, unidad:Unidad):
         self.unidad= unidad
-    def asignarItinerario(self, itinerario: Itinerario):
+    def asignar_itinerario(self, itinerario: Itinerario):
         self.itinerario = itinerario
 #Inserciones
-    def agregarReserva(self, reserva: Reserva) -> bool:
-        nroAsiento = reserva.obtenerAsientoNumero()
-        if not self.unidad.verificarAsientoLibre(nroAsiento):
+    def agregar_reserva(self, reserva: Reserva) -> bool:
+        nro_asiento = reserva.obtener_asiento_numero()
+        if not self.unidad.verificar_asiento_libre(nro_asiento):
             raise ValueError("El asiento ya está ocupado.")
         self.reservas.append(reserva)
-        self.unidad.cambiarEstadoAsiento(nroAsiento)
+        self.unidad.cambiar_estado_asiento(nro_asiento)
         return True
 #liberacion de reservas (se llama 30 min antes del viaje):
-    def liberarAsientosReservados(self):
+    def liberar_asientos_reservados(self):
         for reserva in self.reservas:
-            i = reserva.obtenerAsientoNumero()
-            self.unidad.cambiarEstadoAsiento(i)
+            i = reserva.obtener_asiento_numero()
+            self.unidad.cambiar_estado_asiento(i)
         self.reservas.clear()
 #Consultas
-    def obtenerAsientosLibres(self):
-        return self.unidad.obtenerAsientosLibres()
+    def obtener_asientos_libres(self):
+        return self.unidad.obtener_asientos_libres()
     
 ############################################### MEDIOS DE PAGO  ###############################
 # interfaz 
@@ -128,4 +124,4 @@ class Uala(MedioPago):
 
 class ArgentinaTur:
     def __init__(self):
-        self.sistemaActivo = True
+        self.sistema_activo = True
