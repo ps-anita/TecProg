@@ -31,7 +31,12 @@ class ArgenTUR:
         except ValueError:
             print("Servicio no encontrado.")
     def reservarPasaje(self, servicio, reserva):
-        
+        try:
+            servicioLista = self.buscarServicio(servicio)
+            servicioLista.agregarReserva(reserva)
+            print("Reserva realizada con éxito.")
+        except ValueError:
+            print("No se pudo concretar la reserva")
 
 class Unidad:
     def __init__(self, patente: str):
