@@ -21,13 +21,13 @@ class ArgenTUR:
     def asignarUnidad(self, servicio, unidad):
         try:
             s = self.buscarServicio(servicio)
-            self.unidades.append(s.verUnidad())
+            s.asignarUnidad(unidad)
         except ValueError:
             print("Servicio no encontrado.")
     def agregarItinerario(self, servicio, itinerario):
         try:
             s = self.buscarServicio(servicio)
-            self.itinerarios.append(s.verItinerario())
+            s.asignarItinerario(itinerario)
         except ValueError:
             print("Servicio no encontrado.")
     def reservarPasaje(self, servicio, reserva):
@@ -35,9 +35,20 @@ class ArgenTUR:
             servicioLista = self.buscarServicio(servicio)
             servicioLista.agregarReserva(reserva)
             print("Reserva realizada con éxito.")
-        except ValueError:
-            print("No se pudo concretar la reserva")
-
+        except ValueError as e:
+            print(f"No se pudo concretar la reserva: {e}")
+    def agregarVenta(self, servicio, venta):
+        try:
+            s = self.buscarServicio(servicio)
+            s.agregarVenta(venta)
+        except ValueError as e:
+            print(f"No se pudo realizar la reserva: {e}")
+    def mostrarServicios(self):
+        for serv in self.servicios:
+            print("El servicio con origen ",serv.verOrigen()," y destino ",serv.verDestino()," tiene la unidad ",serv.verUnidad()," asignada.")
+            print("La calidad es ",serv.verCalidad()," y un precio de ",serv.verPrecio())
+            
+            
 class Unidad:
     def __init__(self, patente: str):
         self.patente = patente
