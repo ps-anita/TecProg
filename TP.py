@@ -23,7 +23,7 @@ class Itinerario:
     def __init__(self):
         self.paradas = []
 
-    def agregarParada(self, ciudad: Ciudad, fecha_hora: datetime):
+    def agregar_parada(self, ciudad: Ciudad, fecha_hora: datetime):
         nueva_parada = {"ciudad": ciudad,
                        "fecha_hora": fecha_hora}
         index = self.__obtener_posicion(fecha_hora)
