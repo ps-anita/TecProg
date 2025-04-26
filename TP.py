@@ -4,6 +4,34 @@ from abc import ABC, abstractmethod
 class ArgenTUR:
     def __init__(self):
         self.sistemaActivo = True
+        self.servicios = []
+        self.reservas = []
+        self.ventas = []
+        self.unidades = []
+        self.itinerarios = []
+    def buscarServicio(self, servicio):
+        for s in self.servicios:
+            if(s==servicio):
+                return s
+        raise ValueError("Servicio no encontrado.")
+    def consultarServiciosDisponibles(self):
+        pass
+    def agregarServicio(self, servicio):
+        self.servicios.append(servicio)
+    def asignarUnidad(self, servicio, unidad):
+        try:
+            s = self.buscarServicio(servicio)
+            self.unidades.append(s.verUnidad())
+        except ValueError:
+            print("Servicio no encontrado.")
+    def agregarItinerario(self, servicio, itinerario):
+        try:
+            s = self.buscarServicio(servicio)
+            self.itinerarios.append(s.verItinerario())
+        except ValueError:
+            print("Servicio no encontrado.")
+    def reservarPasaje(self, servicio, reserva):
+        
 
 class Unidad:
     def __init__(self, patente: str):
