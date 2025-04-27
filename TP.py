@@ -21,7 +21,7 @@ class Unidad:
         return [asiento for asiento in self.asientos if asiento.verificar_libre()] #genera una lista con los asientos libres  (list comprehension)
     def verificar_asiento_libre(self, nro_asiento:int)->bool:
         return self.asientos[nro_asiento -1].verificar_libre()
-    def cambiarEstadoAsiento(self,nro_asiento:int):
+    def cambiar_estado_asiento(self,nro_asiento:int):
         self.asientos[nro_asiento - 1].cambiar_estado()
 
 class Ciudad:
@@ -53,28 +53,17 @@ class Reserva:
     #consultas
     def obtener_asiento_numero(self):
         return self.asiento.obtener_numero()
-    def obtenerFecha(self):
+    def obtener_fecha(self):
         return self.fecha_hora
 
-class Venta: 
-    def __init__(self, fecha_hora: datetime, asiento: Asiento):
-        self.fecha_hora = fecha_hora
-        self.asiento = asiento
-
-class Servicio:
-    def __init__(self, unidad: Unidad, calidad: str, precio: float, itinerario: Itinerario):
+class GestorReservas:
+    def __init__(self, unidad: Unidad, reservas: list[Reserva]):
         self.unidad = unidad
-        self.calidad = calidad
-        self.precio = precio
-        self.itinerario = itinerario
-        self.ventas: list[Venta] = []
-        self.reservas: list[Reserva] = []
-#Asignaciones
-    def asignar_unidad(self, unidad:Unidad):
-        self.unidad= unidad
-    def asignar_itinerario(self, itinerario: Itinerario):
-        self.itinerario = itinerario
-#Inserciones
+        self.reservas = reservas
+    #asignacion
+    def asignar_unidad(self, unidad: Unidad):
+        self.unidad = unidad
+    #insercion
     def agregar_reserva(self, reserva: Reserva) -> bool:
         nro_asiento = reserva.obtener_asiento_numero()
         if not self.unidad.verificar_asiento_libre(nro_asiento):
@@ -82,16 +71,23 @@ class Servicio:
         self.reservas.append(reserva)
         self.unidad.cambiar_estado_asiento(nro_asiento)
         return True
-#liberacion de reservas (se llama 30 min antes del viaje):
+    #liberacion de reservas (se llama 30 min antes del viaje):
     def liberar_asientos_reservados(self):
         for reserva in self.reservas:
-            i = reserva.obtener_asiento_numero()
-            self.unidad.cambiar_estado_asiento(i)
+            nro_asiento = reserva.obtener_asiento_numero()
+            self.unidad.cambiar_estado_asiento(nro_asiento)
         self.reservas.clear()
-#Consultas
-    def obtener_asientos_libres(self):
+    #Consultas
+    def obtener_asientos_libres(self) -> list[Asiento]:
         return self.unidad.obtener_asientos_libres()
-    
+    def esta_reservado(self, nro_asiento: int) -> bool:
+        for reserva in self.reservas:
+            if reserva.obtener_asiento_numero() == nro_asiento:
+                return True
+        return False
+
+
+
 ############################################### MEDIOS DE PAGO  ###############################
 # Interfaz 
 class MedioPago(ABC):
@@ -113,7 +109,7 @@ class TarjetaCredito(MedioPago):
     def validarPago(self):
         return self.servicio_externo.verificar_pago()
     def obtener_datos_pago(self):
-        return f"{self.nombre_metodo} - Nombre Titular {self.nombre_pasajero} - DNI {self.dni_titular} - Número Tarjeta {self.numero} - Vencimiento {self.fecha_vencimiento.day}/{self.fecha_vencimiento.month}/{self.fecha_vencimiento.year}"
+        return f"{self.nombre_metodo} - Nombre Titular {self.nombre_pasajero} - DNI {self.dni_titular} - Número Tarjeta {self.numero} - Vencimiento {self.fecha_vencimiento.strftime('%d/%m/%Y')}"
    
 class MercadoPago(MedioPago):
     def __init__(self, celular: str, email: str):
@@ -142,6 +138,58 @@ class ServicioExternoPago:
         self.medio_pago=m_pago
     def verificar_pago(self)->bool:
         return random.choice([True,False,True])
+    
+class Venta: 
+    def __init__(self, _fecha_Hora: datetime, a_asiento: Asiento, p_pasajero: Pasajero, m_pago: MedioPago):
+        self.fecha_hora = _fecha_Hora
+        self.asiento = a_asiento
+        self.pasajero= p_pasajero
+        self.medio_pago= m_pago
+        self.concretada= False
+    def verificar_pago_valido(self):            #Se fija si el medio de pago es válido
+        return self.medio_pago.validarPago()
+    def concretar_venta(self):
+        if self.verificar_pago_valido(): self.concretada= True
+    def obtener_nro_asiento(self):
+        return self.asiento.obtener_numero()
+    def obtener_registro_venta(self):
+        print(f"Registro de Venta - {self.fecha_hora.day}/{self.fecha_hora.month}/{self.fecha_hora.year} {self.fecha_hora.strftime('%H:%M:%S')}")
+        print(f"- Datos Pasajero: {self.pasajero.obtener_nombre()} - DNI {self.pasajero.obtener_dni()}")
+        print(f"- Asiento Reservado: {self.asiento.obtener_numero()}")
+        print(f"- Medio de Pago: {self.medio_pago.obtener_datos_pago()}")
+
+class VerificadorReserva:
+    def __init__(self, reservas: list[Reserva], unidad: Unidad):
+        self.reservas = reservas
+        self.unidad = unidad
+    
+   
+
+
+class Servicio:
+    def __init__(self, unidad: Unidad, calidad: str, precio: float, itinerario: Itinerario):
+        self.unidad = unidad
+        self.calidad = calidad
+        self.precio = precio
+        self.itinerario = itinerario
+        self.ventas: list[Venta] = []
+        self.reservas: list[Reserva] = []
+        self.gestor_reservas = GestorReservas(self.unidad, self.reservas)
+#Asignaciones
+    def asignar_unidad(self, unidad:Unidad):
+        self.unidad= unidad
+        self.gestor_reservas.asignar_unidad(unidad)
+    def asignar_itinerario(self, itinerario: Itinerario):
+        self.itinerario = itinerario
+#Inserciones
+    def agregar_reserva(self, reserva: Reserva) -> bool:
+        return self.gestor_reservas.agregar_reserva(reserva)
+#Consultas
+    def obtener_asientos_libres(self):
+        return self.unidad.obtener_asientos_libres()
+#liberacion de reservas (se llama 30 min antes del viaje):
+    def liberar_asientos_reservados(self):
+       self.gestor_reservas.liberar_asientos_reservados()
     
 ################################################ CLASE SISTEMA ################################
 
