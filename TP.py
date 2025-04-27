@@ -7,29 +7,24 @@ class Asiento:
     def __init__(self, numero: int, libre: bool = True):
         self.numero = numero
         self.libre = libre
-    
     def obtener_numero(self):
         return self.numero
-    
     def verificar_libre(self)->bool:
         return self.libre
-    
     def cambiar_estado(self):
         self.libre = not self.libre
 
 class Unidad:
     def __init__(self, patente: str):
         self.patente = patente
-        self.asientos: list[Asiento] = [Asiento(i) for i in range(1, 51)] 
-       
+        self.asientos: list[Asiento] = [Asiento(i) for i in range(1, 51)] # genera lista con 50 asientos desocupados (list comprehension)
+    # def obtener_asientos_libres(self)->list[Asiento]:
+    #     return [asiento for asiento in self.asientos if asiento.verificar_libre()] #genera una lista con los asientos libres  (list comprehension)
     def verificar_asiento_libre(self, nro_asiento:int)->bool:
         return self.asientos[nro_asiento -1].verificar_libre()
-   
     def cambiar_estado_asiento(self,nro_asiento:int):
         self.asientos[nro_asiento - 1].cambiar_estado()
-    
     def obtener_patente(self): return self.patente
-    
     def obtener_asientos_libres(self):
         for i in self.asientos:
             if(i.verificar_libre()): 
@@ -40,33 +35,25 @@ class Ciudad:
         self.codigo = codigo 
         self.nombre = nombre 
         self.provincia = provincia
-    
     def obtener_codigo(self): return self.codigo
-    
     def obtener_nombre(self): return self.nombre
-    
     def obtener_provincia(self): return self.provincia
 
 class Itinerario:
     def __init__(self):
         self.paradas = []
-    
     def agregar_parada(self, ciudad: Ciudad, fecha_hora: datetime):
         nueva_parada = {"ciudad": ciudad,"fecha_hora": fecha_hora}
         index = self.__obtener_posicion(fecha_hora)
         self.paradas.insert(index, nueva_parada)
-    
     def obtener_partida(self):
         return self.paradas[0]
-    
     def obtener_llegada(self):
         return self.paradas[-1]
-   
     def mostrar_paradas(self):
         for parada in self.paradas:
             print("Ciudad: ", parada["ciudad"].obtener_nombre(), end =" --- ")
             print("Fecha: ", parada["fecha_hora"])
-    
     def __obtener_posicion(self, fecha_hora):
         i = 0
         for parada in self.paradas:
@@ -82,13 +69,9 @@ class Pasajero:
         self.apellido = apellido
         self.email = email
         self.dni = dni
-    
     def obtener_nombre(self): return self.nombre
-    
     def obtener_dni(self): return self.dni
-    
     def obtener_email(self): return self.email
-    
     def obtener_apellido(self): return self.apellido
    
 class Reserva:
@@ -96,31 +79,24 @@ class Reserva:
         self.fecha_hora = fecha_hora
         self.asiento = asiento
         self.pasajero = pasajero
-    
+    #consultas
     def obtener_asiento_numero(self): return self.asiento.obtener_numero()
-    
     def obtener_fecha(self):return self.fecha_hora
-    
     def obtener_dni_pasajero(self): return self.pasajero.obtener_dni()
 
 class GestorReservas:
     def __init__(self, reservas: list[Reserva], unidad: Unidad):
         self.unidad = unidad
         self.reservas = reservas
-    
     #insercion | eliminación
     def agregar_reserva(self, reserva: Reserva) -> bool:
         nro_asiento = reserva.obtener_asiento_numero()
-        
         if not self.unidad.verificar_asiento_libre(nro_asiento):
             print("El asiento seleccionado ya está ocupado.")
             return False
-        
         self.reservas.append(reserva)
         self.unidad.cambiar_estado_asiento(nro_asiento)
-        
         return True
-    
     # liberar reserva en específico ya que se concretó la venta
     def liberar_reserva(self, nro_asiento: int):
         for reserva in self.reservas:
@@ -128,14 +104,12 @@ class GestorReservas:
                 self.unidad.cambiar_estado_asiento(nro_asiento)
                 self.reservas.remove(reserva)
                 break      
-   
     #  se llama 30 min antes del viaje (las reservas que quedan no están con la venta concretada)
     def liberar_asientos_reservados(self):
         for reserva in self.reservas:                           #Va asiento por asiento cambiandole el estado a "Libre"
             nro_asiento = reserva.obtener_asiento_numero()
             self.unidad.cambiar_estado_asiento(nro_asiento)
         self.reservas.clear()
-    
     #Consultas
     def verificar_pasajero_correcto(self, nro_asiento: int, pasajero: Pasajero) -> bool:
         #Verifica si el asiento reservado pertenece al pasajero
@@ -148,9 +122,8 @@ class GestorReservas:
 # Interfaz 
 class MedioPago(ABC):
     @abstractmethod
-    def validar_pago(self):
+    def validarPago(self):
         pass
-    
     @abstractmethod
     def obtener_datos_pago(self):
         pass
@@ -158,7 +131,6 @@ class MedioPago(ABC):
 class ServicioExternoPago:
     def __init__(self, m_pago:MedioPago):
         self.medio_pago=m_pago
-    
     def verificar_pago(self)->bool:
         return random.choice([True,False,True])
 
@@ -170,9 +142,7 @@ class TarjetaCredito(MedioPago):
         self.nombre_pasajero = nombre_pasajero
         self.fecha_vencimiento = f_vencimiento
         self.servicio_externo= servicio_externo
-    
-    def validar_pago(self): return self.servicio_externo.verificar_pago()
-    
+    def validarPago(self): return self.servicio_externo.verificar_pago()
     def obtener_datos_pago(self): return f"{self.nombre_metodo} - Nombre Titular {self.nombre_pasajero} - DNI {self.dni_titular} - Número Tarjeta {self.numero} - Vencimiento {self.fecha_vencimiento.strftime('%d/%m/%Y')}"
    
 class MercadoPago(MedioPago):
@@ -181,10 +151,8 @@ class MercadoPago(MedioPago):
         self.celular = celular
         self.email = email
         self.servicio_externo= servicio_externo
-    
-    def validar_pago(self):
+    def validarPago(self):
         return self.servicio_externo.verificar_pago()
-    
     def obtener_datos_pago(self):
         return f"{self.nombre_metodo} - Celular {self.celular} - Email {self.email}"
 
@@ -194,15 +162,11 @@ class Uala(MedioPago):
         self.email = email
         self.nombre_titular = nombre_t
         self.servicio_externo= servicio_externo
-   
-    def validar_pago(self):
+    def validarPago(self):
         return self.servicio_externo.verificar_pago()
-    
     def obtener_datos_pago(self):
         return f"{self.nombre_metodo} - Nombre Titular {self.nombre_titular} - Email {self.email}"
     
-
-
 class Venta: 
     def __init__(self, _fecha_Hora: datetime, a_asiento: Asiento, p_pasajero: Pasajero, m_pago: MedioPago):
         self.fecha_hora = _fecha_Hora
@@ -210,26 +174,25 @@ class Venta:
         self.pasajero= p_pasajero
         self.medio_pago= m_pago
         self.concretada= False
-    
     def verificar_pago_valido(self):            #Se fija si el medio de pago es válido
-        return self.medio_pago.validar_pago()
-    
+        return self.medio_pago.validarPago()
     def concretar_venta(self):
         self.concretada= True
-    
     def obtener_nro_asiento(self):
         return self.asiento.obtener_numero()
-    
     def obtener_pasajero(self):
         return self.pasajero.obtener_nombre + self.pasajero.obtener_apellido
-    
     def obtener_registro_venta(self):
         print(f"Registro de Venta - {self.fecha_hora.day}/{self.fecha_hora.month}/{self.fecha_hora.year} {self.fecha_hora.strftime('%H:%M:%S')}")
         print(f"- Datos Pasajero: {self.pasajero.obtener_nombre()} - DNI {self.pasajero.obtener_dni()}")
         print(f"- Asiento Reservado: {self.asiento.obtener_numero()}")
         print(f"- Medio de Pago: {self.medio_pago.obtener_datos_pago()}")
 
-
+    def obtener_fecha_hora(self):
+        return self.fecha_hora
+    
+    def obtener_medio_pago(self):
+        return self.medio_pago.__class__.__name__
 
 class GestorVentas:
     def __init__(self, ventas: list[Venta], gestor_reservas: GestorReservas, unidad: Unidad):
@@ -264,8 +227,6 @@ class GestorVentas:
             print(f"Pago inválido para el pasajero {venta.obtener_pasajero()}. No se logró realizar la venta.")
             return False
    
-
-
 class Servicio:
     def __init__(self, unidad: Unidad, calidad: str, precio: float, itinerario: Itinerario,fecha_hora_salida:datetime):
         self.unidad = unidad
@@ -277,19 +238,15 @@ class Servicio:
         self.gestor_reservas = GestorReservas(self.reservas, self.unidad)
         self.gestor_ventas = GestorVentas(self.ventas,self.gestor_reservas,self.unidad)
         self.fecha_hora_salida=fecha_hora_salida
-    
     def modificar_precio(self,precioNuevo):
         self.precio=precioNuevo
-    
     def modificar_itinerario(self,it:Itinerario):
         self.itinerario=it
-
 #Inserciones
     def agregar_reserva(self, reserva: Reserva) -> bool:
         return self.gestor_reservas.agregar_reserva(reserva)
     def agregar_venta(self,venta:Venta)->bool:
         return self.gestor_ventas.agregar_venta(venta)
-
 #Consultas
     def obtener_asientos_libres(self):
         return self.unidad.obtener_asientos_libres()
@@ -298,11 +255,25 @@ class Servicio:
     def obtener_itinerario(self): return self.itinerario.mostrar_paradas()
     def obtener_unidad(self): return self.unidad
     def obtener_fecha_salida(self): return self.fecha_hora_salida
-
 #liberacion de reservas (se llama 30 min antes del viaje):
     def liberar_asientos_reservados(self):
        self.gestor_reservas.liberar_asientos_reservados()
 
+    def obtener_ventas_por_tiempo(self, desde: datetime, hasta: datetime):
+        cant = 0
+        for venta in self.ventas:
+            if venta.obtener_fecha_hora() <= desde and venta.fecha_hora >= hasta:
+                cant = cant + 1
+        return (self.precio * cant)
+
+    def obtener_ventas_por_medio(self, medio):
+        cant = 0
+        for venta in self.ventas: 
+            if venta.obtener_medio_pago() == medio:
+                cant = cant + 1
+        return (self.precio * cant)
+
+        
 ################################################ CLASE SISTEMA ################################################
 class ArgenTur:
     def __init__(self):
@@ -379,10 +350,18 @@ class ArgenTur:
             print()
             cont+=1
 
+    def ver_total_por_fecha(self, desde: datetime, hasta: datetime):
+        total = 0
+        for servicio in self.lista_servicios:
+            total = total + servicio.obtener_ventas_por_tiempo(desde, hasta)
+        return total
 
-
-
-
+    def ver_total_por_medio(self, medio: str):
+        total = 0
+        for servicio in self.lista_servicios:
+            total = total + servicio.obtener_ventas_por_medio(medio)
+        return total
+    
 ################################################ MAIN ################################################
 
 arg=ArgenTur()
