@@ -93,38 +93,55 @@ class Servicio:
         return self.unidad.obtener_asientos_libres()
     
 ############################################### MEDIOS DE PAGO  ###############################
-# interfaz 
+# Interfaz 
 class MedioPago(ABC):
-    
     @abstractmethod
     def validarPago(self):
         pass
+    @abstractmethod
+    def obtener_datos_pago(self):
+        pass
 
 class TarjetaCredito(MedioPago):
-    def __init__(self, numero: str, DNItitular: int, nombre: str, fechaVencimiento: date):
+    def __init__(self, numero: str, dni_t: int, nombre_pasajero: str, f_vencimiento: date):
+        self.nombre_metodo="Tarjeta de Crédito"
         self.numero = numero
-        self.DNItitular = DNItitular
-        self.nombre = nombre
-        self.fechaVencimiento = date
-
+        self.dni_titular = dni_t
+        self.nombre_pasajero = nombre_pasajero
+        self.fecha_vencimiento = f_vencimiento
+        self.servicio_externo=ServicioExternoPago(self)
     def validarPago(self):
-        return True 
-
+        return self.servicio_externo.verificar_pago()
+    def obtener_datos_pago(self):
+        return f"{self.nombre_metodo} - Nombre Titular {self.nombre_pasajero} - DNI {self.dni_titular} - Número Tarjeta {self.numero} - Vencimiento {self.fecha_vencimiento.day}/{self.fecha_vencimiento.month}/{self.fecha_vencimiento.year}"
+   
 class MercadoPago(MedioPago):
     def __init__(self, celular: str, email: str):
+        self.nombre_metodo="Mercado Pago"
         self.celular = celular
         self.email = email
-
+        self.servicio_externo=ServicioExternoPago(self)
     def validarPago(self):
-        return True
-    
+        return self.servicio_externo.verificar_pago()
+    def obtener_datos_pago(self):
+        return f"{self.nombre_metodo} - Celular {self.celular} - Email {self.email}"
+
 class Uala(MedioPago):
-    def __init__(self, email: str, nombreTitular: str):
+    def __init__(self, email: str, nombre_t: str):
+        self.nombre_metodo="Ualá"
         self.email = email
-        self.nombreTitular = nombreTitular
-
+        self.nombre_titular = nombre_t
+        self.servicio_externo=ServicioExternoPago(self)
     def validarPago(self):
-        return True
+        return self.servicio_externo.verificar_pago()
+    def obtener_datos_pago(self):
+        return f"{self.nombre_metodo} - Nombre Titular {self.nombre_titular} - Email {self.email}"
+    
+class ServicioExternoPago:
+    def __init__(self, m_pago:MedioPago):
+        self.medio_pago=m_pago
+    def verificar_pago(self)->bool:
+        return random.choice([True,False,True])
     
 ################################################ CLASE SISTEMA ################################
 
