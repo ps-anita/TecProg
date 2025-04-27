@@ -9,44 +9,56 @@ class ArgenTUR:
         self.ventas = []
         self.unidades = []
         self.itinerarios = []
-    def buscarServicio(self, servicio):
+    
+    def buscar_servicio(self, servicio):
         for s in self.servicios:
             if(s==servicio):
                 return s
         raise ValueError("Servicio no encontrado.")
-    def consultarServiciosDisponibles(self):
+    
+    def consultar_servicios_disponibles(self):
         pass
-    def agregarServicio(self, servicio):
+    
+    def agregar_servicio(self, servicio):
         self.servicios.append(servicio)
-    def asignarUnidad(self, servicio, unidad):
+   
+    def asignar_Unidad(self, servicio, unidad):
         try:
-            s = self.buscarServicio(servicio)
-            s.asignarUnidad(unidad)
+            s = self.buscar_ervicio(servicio)
+            s.asignar_unidad(unidad)
+        
         except ValueError:
             print("Servicio no encontrado.")
-    def agregarItinerario(self, servicio, itinerario):
+   
+    def agregar_itinerario(self, servicio, itinerario):
         try:
-            s = self.buscarServicio(servicio)
-            s.asignarItinerario(itinerario)
+            s = self.buscar_servicio(servicio)
+            s.asignar_itinerario(itinerario)
+        
         except ValueError:
             print("Servicio no encontrado.")
-    def reservarPasaje(self, servicio, reserva):
+    
+    def reservar_pasaje(self, servicio, reserva):
         try:
-            servicioLista = self.buscarServicio(servicio)
-            servicioLista.agregarReserva(reserva)
+            servicio_lista = self.buscar_servicio(servicio)
+            servicio_lista.agregar_reserva(reserva)
             print("Reserva realizada con éxito.")
+        
         except ValueError as e:
             print(f"No se pudo concretar la reserva: {e}")
-    def agregarVenta(self, servicio, venta):
+    
+    def agregar_venta(self, servicio, venta):
         try:
-            s = self.buscarServicio(servicio)
-            s.agregarVenta(venta)
+            s = self.buscar_servicio(servicio)
+            s.agregar_venta(venta)
+        
         except ValueError as e:
             print(f"No se pudo realizar la reserva: {e}")
-    def mostrarServicios(self):
+    
+    def mostrar_servicios(self):
         for serv in self.servicios:
-            print("El servicio con origen ",serv.verOrigen()," y destino ",serv.verDestino()," tiene la unidad ",serv.verUnidad()," asignada.")
-            print("La calidad es ",serv.verCalidad()," y un precio de ",serv.verPrecio())
+            print("El servicio con origen ",serv.ver_origen()," y destino ",serv.ver_destino()," tiene la unidad ",serv.ver_unidad()," asignada.")
+            print("La calidad es ",serv.ver_calidad()," y un precio de ",serv.ver_precio())
             
             
 class Unidad:
