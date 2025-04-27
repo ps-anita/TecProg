@@ -1,5 +1,6 @@
 from datetime import datetime, date
 from abc import ABC, abstractmethod
+import random
 
 class Asiento:
     def __init__(self, numero: int, libre: bool = True):
@@ -34,10 +35,15 @@ class Itinerario:
         self.paradas = paradas if paradas is not None else []
 
 class Pasajero:
-    def __init__(self, nombre: str, email: str, dni: int):
+    def __init__(self, nombre: str,apellido:str, email: str, dni: int):
         self.nombre = nombre
+        self.apellido = apellido
         self.email = email
         self.dni = dni
+    def obtener_nombre(self): return self.nombre
+    def obtener_dni(self): return self.dni
+    def obtener_email(self): return self.email
+    def obtener_apellido(self): return self.apellido
    
 class Reserva:
     def __init__(self, fecha_hora: datetime, asiento: Asiento, pasajero:Pasajero):
