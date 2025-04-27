@@ -63,7 +63,7 @@ class GestorReservas:
     #asignacion
     def asignar_unidad(self, unidad: Unidad):
         self.unidad = unidad
-    #insercion
+    #insercion | eliminación
     def agregar_reserva(self, reserva: Reserva) -> bool:
         nro_asiento = reserva.obtener_asiento_numero()
         if not self.unidad.verificar_asiento_libre(nro_asiento):
@@ -71,12 +71,15 @@ class GestorReservas:
         self.reservas.append(reserva)
         self.unidad.cambiar_estado_asiento(nro_asiento)
         return True
-    #liberacion de reservas (se llama 30 min antes del viaje):
+    
+    
+    # liberar reservas: se llama 30 min antes del viaje
     def liberar_asientos_reservados(self):
         for reserva in self.reservas:
             nro_asiento = reserva.obtener_asiento_numero()
             self.unidad.cambiar_estado_asiento(nro_asiento)
         self.reservas.clear()
+     
     #Consultas
     def obtener_asientos_libres(self) -> list[Asiento]:
         return self.unidad.obtener_asientos_libres()
@@ -158,11 +161,7 @@ class Venta:
         print(f"- Asiento Reservado: {self.asiento.obtener_numero()}")
         print(f"- Medio de Pago: {self.medio_pago.obtener_datos_pago()}")
 
-class VerificadorReserva:
-    def __init__(self, reservas: list[Reserva], unidad: Unidad):
-        self.reservas = reservas
-        self.unidad = unidad
-    
+
    
 
 
