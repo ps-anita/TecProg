@@ -55,9 +55,11 @@ class Reserva:
         return self.asiento.obtener_numero()
     def obtener_fecha(self):
         return self.fecha_hora
+    def obtener_dni_pasajero(self):
+        return self.pasajero.obtener_dni()
 
 class GestorReservas:
-    def __init__(self, unidad: Unidad, reservas: list[Reserva]):
+    def __init__(self, reservas: list[Reserva], unidad: Unidad):
         self.unidad = unidad
         self.reservas = reservas
     #asignacion
@@ -73,7 +75,14 @@ class GestorReservas:
         return True
     
     
-    # liberar reservas: se llama 30 min antes del viaje
+    # liberar reservas
+    def liberar_reserva(self, nro_asiento: int):
+        for reserva in self.reservas:
+            if reserva.obtener_asiento_numero() == nro_asiento:
+                self.reservas.remove(reserva)
+                break 
+                
+    #  se llama 30 min antes del viaje
     def liberar_asientos_reservados(self):
         for reserva in self.reservas:
             nro_asiento = reserva.obtener_asiento_numero()
@@ -86,6 +95,12 @@ class GestorReservas:
     def esta_reservado(self, nro_asiento: int) -> bool:
         for reserva in self.reservas:
             if reserva.obtener_asiento_numero() == nro_asiento:
+                return True
+        return False
+    def verificar_pasajero_correcto(self, nro_asiento: int, pasajero: Pasajero) -> bool:
+        #Verifica si el asiento reservado pertenece al pasajero
+        for reserva in self.reservas:
+            if reserva.obtener_asiento_numero() == nro_asiento and reserva.obtener_dni_pasajero() == pasajero.obtener_dni():
                 return True
         return False
 
@@ -155,13 +170,48 @@ class Venta:
         if self.verificar_pago_valido(): self.concretada= True
     def obtener_nro_asiento(self):
         return self.asiento.obtener_numero()
+    def obtener_pasajero(self):
+        return self.pasajero.obtener_nombre + self.pasajero.obtener_apellido
     def obtener_registro_venta(self):
         print(f"Registro de Venta - {self.fecha_hora.day}/{self.fecha_hora.month}/{self.fecha_hora.year} {self.fecha_hora.strftime('%H:%M:%S')}")
         print(f"- Datos Pasajero: {self.pasajero.obtener_nombre()} - DNI {self.pasajero.obtener_dni()}")
         print(f"- Asiento Reservado: {self.asiento.obtener_numero()}")
         print(f"- Medio de Pago: {self.medio_pago.obtener_datos_pago()}")
 
+class GestorVentas:
+    def __init__(self, ventas: list[Venta], gestor_reservas: GestorReservas, unidad: Unidad):
+        self.ventas = ventas
+        self.gestor_reservas = gestor_reservas  # Recibe GestorReservas
+        self.unidad = unidad
+    
+    def agregar_venta(self, venta: Venta) -> bool:
+        nro_asiento = venta.obtener_nro_asiento()
+        
+        # Verificar si el asiento está reservado
+        if self.gestor_reservas.esta_reservado(nro_asiento):
+            # Si ya está reservado, verificar si es el mismo pasajero
+            if self.gestor_reservas.verificar_pasajero_correcto(nro_asiento, venta.pasajero):
+                return self.proceder_con_venta(venta)
+            else:
+                print(f"Asiento {nro_asiento} ya está reservado por otro pasajero.")
+                return False
+        else:
+            # Si no está reservado, venderlo y marcar como ocupado
+            self.unidad.cambiar_estado_asiento(nro_asiento)  # Cambiar el estado del asiento a ocupado
+            return self.proceder_con_venta(venta)
 
+    def proceder_con_venta(self, venta: Venta) -> bool:
+        #Procede con la venta: verifica el pago
+        if venta.verificar_pago_valido():
+            venta.concretar_venta()
+            self.ventas.append(venta)
+            nro_asiento = venta.obtener_nro_asiento()
+            print(f"Asiento {nro_asiento} vendido a {venta.obtener_pasajero()}.")
+            self.gestor_reservas.liberar_reserva(nro_asiento)
+            return True
+        else:
+            print(f"Pago inválido para el pasajero {venta.obtener_pasajero()}. No se puede realizar la venta.")
+            return False
    
 
 
@@ -173,7 +223,8 @@ class Servicio:
         self.itinerario = itinerario
         self.ventas: list[Venta] = []
         self.reservas: list[Reserva] = []
-        self.gestor_reservas = GestorReservas(self.unidad, self.reservas)
+        self.gestor_reservas = GestorReservas(self.reservas, self.unidad)
+        self.gestor_ventas = GestorVentas(self.ventas,self.gestor_reservas,self.unidad)
 #Asignaciones
     def asignar_unidad(self, unidad:Unidad):
         self.unidad= unidad
@@ -183,6 +234,8 @@ class Servicio:
 #Inserciones
     def agregar_reserva(self, reserva: Reserva) -> bool:
         return self.gestor_reservas.agregar_reserva(reserva)
+    def agregar_venta(self,venta:Venta)->bool:
+        return self.gestor_ventas.agregar_venta(venta)
 #Consultas
     def obtener_asientos_libres(self):
         return self.unidad.obtener_asientos_libres()
