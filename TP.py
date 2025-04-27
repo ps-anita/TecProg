@@ -22,9 +22,9 @@ class ArgenTUR:
     def agregar_servicio(self, servicio):
         self.servicios.append(servicio)
    
-    def asignar_Unidad(self, servicio, unidad):
+    def asignar_unidad(self, servicio, unidad):
         try:
-            s = self.buscar_ervicio(servicio)
+            s = self.buscar_servicio(servicio)
             s.asignar_unidad(unidad)
         
         except ValueError:
