@@ -87,6 +87,7 @@ class Reserva:
 
 class GestorReservas:
     def __init__(self, reservas: list[Reserva],unidad:Unidad):
+        self.unidad = unidad
         self.reservas = reservas
     #insercion | eliminación
     def agregar_reserva(self, reserva: Reserva)->bool:
