@@ -2,7 +2,8 @@ from abc import ABC, abstractmethod
 from typing import Tuple
 from datetime import datetime, date
 import random
-
+import threading
+import time
 class Asiento:
     def __init__(self, numero: int, libre: bool = True):
         self.numero = numero
@@ -85,7 +86,7 @@ class Reserva:
     def obtener_unidad(self): return self.unidad
 
 class GestorReservas:
-    def __init__(self, reservas: list[Reserva]):
+    def __init__(self, reservas: list[Reserva],unidad:Unidad):
         self.reservas = reservas
     #insercion | eliminación
     def agregar_reserva(self, reserva: Reserva)->bool:
@@ -249,6 +250,7 @@ class Servicio:
         self.gestor_reservas = gestor_reservas
         self.gestor_ventas = gestor_ventas
         self.fecha_hora_salida= fecha_hora_salida
+      #  self.iniciar_liberacion_asientos()
     def modificar_precio(self,precio_nuevo):
         self.precio=precio_nuevo
     def modificar_itinerario(self,it:Itinerario):
@@ -276,9 +278,22 @@ class Servicio:
     def obtener_cantidad_ventas_por_medio(self, medio:str,desde:datetime,hasta:datetime):return self.gestor_ventas.obtener_cantidad_ventas_por_medio(medio,desde,hasta)
     
 
-    #liberacion de reservas (se llama 30 min antes del viaje):
+##liberacion de reservas (se llama 30 min antes del viaje):
+#def iniciar_liberacion_asientos(self):
+#    #Inicia un hilo que liberará los asientos 30 minutos antes de la salida del viaje.
+#    # Tiempo restante hasta la salida
+#    tiempo_restante = (self.fecha_hora_salida - datetime.now()).total_seconds()
+#    # Tiempo para liberar los asientos (30 minutos antes)
+#    tiempo_para_liberar = tiempo_restante - 1800  # 1800 segundos = 30 minutos
+#    if tiempo_para_liberar > 0:
+#        # Crear y comenzar el hilo que liberará los asientos
+#        threading.Timer(tiempo_para_liberar, self.liberar_asientos_reservados).start()
+#    else:
+#        self.liberar_asientos_reservados()
+    
     def liberar_asientos_reservados(self):
        self.gestor_reservas.liberar_asientos_reservados()
+       print("Se han liberado los asientos reservados 30 minutos antes de la salida del viaje.")
 #-----------------------------------------------------Factory-------------------------------------------------#
 class ServicioFactory:
     @staticmethod
@@ -286,7 +301,7 @@ class ServicioFactory:
         reservas:list[Reserva] = []
         ventas:list[Venta] = []
         
-        gestor_reservas = GestorReservas(reservas)
+        gestor_reservas = GestorReservas(reservas, unidad)
         gestor_ventas = GestorVentas(ventas, gestor_reservas, unidad)
         
         servicio = Servicio(unidad, calidad, precio, itinerario, fecha_hora_salida, reservas, ventas, gestor_reservas, gestor_ventas)
