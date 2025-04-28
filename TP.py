@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import Tuple
-from datetime import datetime, date
+from datetime import datetime, time
 import random
 import threading
-import time
+
 class Asiento:
     def __init__(self, numero: int, libre: bool = True):
         self.numero = numero
@@ -86,8 +86,7 @@ class Reserva:
     def obtener_unidad(self): return self.unidad
 
 class GestorReservas:
-    def __init__(self, reservas: list[Reserva],unidad:Unidad):
-        self.unidad = unidad
+    def __init__(self, reservas: list[Reserva]):
         self.reservas = reservas
     #insercion | eliminación
     def agregar_reserva(self, reserva: Reserva)->bool:
@@ -107,7 +106,8 @@ class GestorReservas:
     def liberar_asientos_reservados(self):
         for reserva in self.reservas:                           #Va asiento por asiento cambiandole el estado a "Libre"
             nro_asiento = reserva.obtener_asiento_numero()
-            self.unidad.cambiar_estado_asiento(nro_asiento)
+            unidad=reserva.obtener_unidad()
+            unidad.cambiar_estado_asiento(nro_asiento)
         self.reservas.clear()
     #Consultas
     def verificar_pasajero_correcto(self, nro_asiento: int, pasajero: Pasajero) -> bool:
@@ -269,40 +269,32 @@ class Servicio:
     def obtener_itinerario(self): return self.itinerario.mostrar_paradas()
     def obtener_llegada(self): return self.itinerario.obtener_llegada()
     def obtener_unidad(self): return self.unidad
-    def obtener_fecha_salida(self):
+    def obtener_fecha_salida_str(self):
         return f"{self.fecha_hora_salida.day}/{self.fecha_hora_salida.month}/{self.fecha_hora_salida.year}"
-
+    def obtener_fecha_salida_datetime(self): return self.fecha_hora_salida
     def consultar_asiento_disponible(self,nro_asiento:int):
         return self.unidad.verificar_asiento_libre(nro_asiento)
     def obtener_monto_ventas(self, desde: datetime, hasta: datetime): return self.gestor_ventas.obtener_monto_ventas_por_tiempo(desde,hasta,self.obtener_precio())
     def discriminar_ventas_por_pagos(self,medio:str,desde:datetime, hasta:datetime): return self.gestor_ventas.obtener_ventas_por_medio(medio,desde,hasta,self.precio)
     def obtener_cantidad_ventas_por_medio(self, medio:str,desde:datetime,hasta:datetime):return self.gestor_ventas.obtener_cantidad_ventas_por_medio(medio,desde,hasta)
-    
-#               LIBERACION RESERVAS
     def iniciar_liberacion_asientos(self):
-        # Inicia un hilo que liberará los asientos 30 minutos antes de la salida del viaje.
-        tiempo_restante = (self.fecha_hora_salida - datetime.now()).total_seconds()
-        #print(f"Tiempo restante hasta la salida del viaje: {tiempo_restante} segundos")
+         # Inicia un hilo que liberará los asientos 30 minutos antes de la salida del viaje.
+         tiempo_restante = (self.fecha_hora_salida - datetime.now()).total_seconds()
+         # Tiempo para liberar los asientos (30 minutos antes)
+         tiempo_para_liberar = tiempo_restante - 1800  # 1800 segundos = 30 minutos
+         # Validar si el tiempo para liberar es mayor a 1 día (86400 segundos)
+         if tiempo_para_liberar <= 0:
+             print("El viaje ya ha pasado o está a menos de 30 minutos de la salida, liberando asientos ahora...")
+             self.liberar_asientos_reservados()
+         elif tiempo_para_liberar > 60 * 60 * 24:  # mayor a 1 día (86400 segundos)
+             print("El tiempo de espera es mayor a 1 día, liberación cancelada.")
+         else:
+             # Crear y comenzar el hilo que liberará los asientos
+             threading.Timer(tiempo_para_liberar, self.liberar_asientos_reservados).start()
 
-        # Tiempo para liberar los asientos (30 minutos antes)
-        tiempo_para_liberar = tiempo_restante - 1800  # 1800 segundos = 30 minutos
-        #print(f"Tiempo para liberar (30 minutos antes de la salida): {tiempo_para_liberar} segundos")
-
-        # Validar si el tiempo para liberar es mayor a 1 día (86400 segundos)
-        if tiempo_para_liberar <= 0:
-            print("El viaje ya ha pasado o está a menos de 30 minutos de la salida, liberando asientos ahora...")
-            self.liberar_asientos_reservados()
-        elif tiempo_para_liberar > 60 * 60 * 24:  # mayor a 1 día (86400 segundos)
-            print("El tiempo de espera es mayor a 1 día, liberación cancelada.")
-        else:
-            #print(f"Iniciando Timer para liberar asientos en {tiempo_para_liberar} segundos...")
-            # Crear y comenzar el hilo que liberará los asientos
-            threading.Timer(tiempo_para_liberar, self.liberar_asientos_reservados).start()
-
-    
+    #liberacion de reservas (se llama 30 min antes del viaje):
     def liberar_asientos_reservados(self):
        self.gestor_reservas.liberar_asientos_reservados()
-       print("Se han liberado los asientos reservados 30 minutos antes de la salida del viaje.")
 #-----------------------------------------------------Factory-------------------------------------------------#
 class ServicioFactory:
     @staticmethod
@@ -310,7 +302,7 @@ class ServicioFactory:
         reservas:list[Reserva] = []
         ventas:list[Venta] = []
         
-        gestor_reservas = GestorReservas(reservas, unidad)
+        gestor_reservas = GestorReservas(reservas)
         gestor_ventas = GestorVentas(ventas, gestor_reservas, unidad)
         
         servicio = Servicio(unidad, calidad, precio, itinerario, fecha_hora_salida, reservas, ventas, gestor_reservas, gestor_ventas)
@@ -342,7 +334,7 @@ class ArgenTur:
     def reservar_pasajes(self, pasajero:Pasajero, fecha_hora_reserva: datetime, asiento: Asiento, servicio: Servicio):
         reserva=Reserva(fecha_hora_reserva,asiento,pasajero,servicio.obtener_unidad())
         servicio._agregar_reserva(reserva)
-        print(f"Reserva realizada! Pasajero {pasajero.nombre} {pasajero.apellido}, asiento {asiento.obtener_numero()}, servicio del {servicio.obtener_fecha_salida()}")
+        print(f"Reserva realizada! Pasajero {pasajero.nombre} {pasajero.apellido}, asiento {asiento.obtener_numero()}, servicio del {servicio.obtener_fecha_salida_str()}")
 
     def agregar_ciudad(self, cod: str, nombre: str, prov: str):
         self.lista_ciudades.append(Ciudad(cod,nombre,prov))
@@ -355,6 +347,13 @@ class ArgenTur:
     
     def verificar_asiento(nro_asiento:int, servicio: Servicio)->bool:
         return servicio.consultar_asiento_disponible(nro_asiento)
+    
+    def liberar_asientos_caducados(self):
+        hora_actual=datetime(2025,3,29,17,48)
+        for servicio in self.lista_servicios:
+            
+            servicio.iniciar_liberacion_asientos()
+            
     
     #### MÉTODOS CONSULTAS ####
     def obtener_itinerario(self,nro:int)-> Itinerario:   # Esto lo pensé así: Cada itineraro está enumerado (línea 340), el encargado de crear servicios va a ver
@@ -390,7 +389,7 @@ class ArgenTur:
         for servicio in self.lista_servicios:
             uni=servicio.obtener_unidad()
             print(f"SERVICIO #{cont}")
-            print(f"Fecha y Hora de salida: {servicio.obtener_fecha_salida()}")
+            print(f"Fecha y Hora de salida: {servicio.obtener_fecha_salida_str()}")
             print(f"Calidad: {servicio.obtener_calidad()} - Unidad: {uni.obtener_patente()} - Precio ${servicio.obtener_precio()}")
             print("Itinerario del Servicio:")
             servicio.obtener_itinerario()
@@ -415,7 +414,7 @@ class ArgenTur:
     def ver_cantidad_viajes_por_destino(self, desde: datetime, hasta: datetime):
         for itinerario in self.lista_itinerarios:
             destino = itinerario.obtener_llegada()
-            print(f"  - Destino: {destino["ciudad"].obtener_nombre()},  {destino['ciudad'].obtener_provincia()} ")  # Para ver la estructura del diccionario destino
+            print(f"  - Destino: {destino['ciudad'].obtener_nombre()},  {destino['ciudad'].obtener_provincia()} ")  # Para ver la estructura del diccionario destino
             cantidad_viajes = 0
             for servicio in self.lista_servicios:
                 llegada_servicio = servicio.obtener_llegada()
@@ -427,9 +426,9 @@ class ArgenTur:
         print(f"INFORME ARGENTUR {desde.day}/{desde.month}/{desde.year} - {hasta.day}/{hasta.month}/{hasta.year}")
         print(f"- Monto de ventas totales facturados: ${self.ver_monto_total_por_fecha(desde,hasta)}")
         print(f"- Cantidad de pagos realizados por:")
-        print(f"  - Mercado Pago: {self.ver_cantidad_por_medio_pago("Mercado Pago",desde,hasta)}")
+        print(f"  - Mercado Pago: {self.ver_cantidad_por_medio_pago('Mercado Pago',desde,hasta)}")
         print(f"  - Ualá: {self.ver_cantidad_por_medio_pago('Ualá',desde,hasta)}")
-        print(f"  - Tarjeta de Crédito: {self.ver_cantidad_por_medio_pago("Tarjeta de Crédito",desde,hasta)}")
+        print(f"  - Tarjeta de Crédito: {self.ver_cantidad_por_medio_pago('Tarjeta de Crédito',desde,hasta)}")
         print(f"- Cantidad de viajes realizados por localidad: ")
         self.ver_cantidad_viajes_por_destino(desde,hasta)
 
@@ -466,24 +465,24 @@ def cargar_datos()-> ArgenTur:      # Esta clase únicamente se encarga de ya cr
     p4=Pasajero("Jesús Exequiel","Benavídez","jesusbenavidez@fich.unl",3576412)
 
     arg.reservar_pasajes(p1,datetime(2025,6,12,15,35),Asiento(10),arg.obtener_servicio(1))
-    arg.reservar_pasajes(p2,datetime(2025,1,10,23,26),Asiento(15),arg.obtener_servicio(2))
+    arg.reservar_pasajes(p2,datetime(2025,6,15,23,26),Asiento(15),arg.obtener_servicio(2))
     arg.reservar_pasajes(p3,datetime(2025,3,29,17,58),Asiento(3),arg.obtener_servicio(3))
     arg.reservar_pasajes(p4,datetime(2024,12,25,11,20),Asiento(19),arg.obtener_servicio(2))
 
     servicio_externo=ServicioExternoPago()
     arg.realizar_compra(datetime(2025,6,12,15,35),Asiento(10),p1,arg.obtener_servicio(1),MercadoPago(3421596846,p1.obtener_email(),servicio_externo)) 
-    arg.realizar_compra(datetime(2025,1,10,23,26),Asiento(15),p2,arg.obtener_servicio(2),TarjetaCredito(1234567891023564,p2.obtener_dni(),p2.obtener_nombre(),datetime(2037,10,8),servicio_externo))
+    arg.realizar_compra(datetime(2025,1,16,23,26),Asiento(15),p2,arg.obtener_servicio(2),TarjetaCredito(1234567891023564,p2.obtener_dni(),p2.obtener_nombre(),datetime(2037,10,8),servicio_externo))
+    arg.realizar_compra(datetime(2025,12,25,23,26),Asiento(19),p4,arg.obtener_servicio(2),TarjetaCredito(1234567891023564,p4.obtener_dni(),p4.obtener_nombre(),datetime(2037,10,8),servicio_externo))
 
     return arg
 
 ################################################ SIMULACIÓN DE PROGRAMA ################################################
 arg=cargar_datos()
 
-print(f"¡Bienvenidos a ArgenTur! El lugar donde podrás cumplir el sueño de conocer los lugares más atractivos del país. \n A continuación podrás conocer todos los servicios que tenemos para vos. \n")
+print(f"¡Bienvenidos a ArgenTur! El lugar donde podrás cumplir el sueño de conocer los lugares más atractivos del país. \nA continuación podrás conocer todos los servicios que tenemos para vos. \n")
 arg.ver_servicios()
 
-print("¿Cuál servicio te gustaría disfrutar? Para seleccionarlo, ingresa el #número correspondiente del servicio.")
-servicio_elegido=int(input("¿Cuál servicio te gustaría disfrutar? Para seleccionarlo, ingresa el #número correspondiente del servicio."))
+servicio_elegido=int(input("¿Cuál servicio te gustaría disfrutar? Para seleccionarlo, ingresa el #número correspondiente del servicio: "))
 servicio=arg.obtener_servicio(servicio_elegido)
 
 print("¡Estupendo! A continuación, te mostramos los asientos disponibles para este servicio.")
@@ -503,7 +502,6 @@ email=(input("¡Último paso! Necesitamos un email para enviarte los detalles de
 
 pasajero=Pasajero(nombre,apellido,email,dni)
 arg.reservar_pasajes(pasajero,datetime(2025,4,28,12,00),asiento,servicio)
-
 
 arg.ver_asientos_libres(servicio)
 
@@ -531,5 +529,19 @@ else:
     print("Recuerde que 30 minutos antes del viaje, perderá el asiento en caso de no abonar.")
 print("¡Muchas gracias por elegir viajar con nosotros")
 
+
+print("\nBienvenido a la sección de informes. Por favor, ingrese el período en el que se desea ver el informe.")
+
+desde=datetime
+hasta=datetime
+
+desde_dia=int(input("Día desde: "))
+desde_mes=int(input("Mes desde: "))
+desde_año=int(input("Año desde: "))
+
+hasta_dia=int(input("Día hasta: "))
+hasta_mes=int(input("Mes hasta: "))
+hasta_año=int(input("Año hasta: "))
+
 print("\nGENERANDO INFORME...\n")
-arg.generar_informe(datetime(2000,1,1),datetime(2025,12,31))
+arg.generar_informe(datetime(desde_año,desde_mes,desde_dia),datetime(hasta_año,hasta_mes,hasta_dia))
