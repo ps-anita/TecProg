@@ -251,7 +251,7 @@ class Servicio:
         self.gestor_reservas = gestor_reservas
         self.gestor_ventas = gestor_ventas
         self.fecha_hora_salida= fecha_hora_salida
-      #  self.iniciar_liberacion_asientos()
+        self.iniciar_liberacion_asientos()
     def modificar_precio(self,precio_nuevo):
         self.precio=precio_nuevo
     def modificar_itinerario(self,it:Itinerario):
@@ -278,19 +278,27 @@ class Servicio:
     def discriminar_ventas_por_pagos(self,medio:str,desde:datetime, hasta:datetime): return self.gestor_ventas.obtener_ventas_por_medio(medio,desde,hasta,self.precio)
     def obtener_cantidad_ventas_por_medio(self, medio:str,desde:datetime,hasta:datetime):return self.gestor_ventas.obtener_cantidad_ventas_por_medio(medio,desde,hasta)
     
+#               LIBERACION RESERVAS
+    def iniciar_liberacion_asientos(self):
+        # Inicia un hilo que liberará los asientos 30 minutos antes de la salida del viaje.
+        tiempo_restante = (self.fecha_hora_salida - datetime.now()).total_seconds()
+        #print(f"Tiempo restante hasta la salida del viaje: {tiempo_restante} segundos")
 
-##liberacion de reservas (se llama 30 min antes del viaje):
-#def iniciar_liberacion_asientos(self):
-#    #Inicia un hilo que liberará los asientos 30 minutos antes de la salida del viaje.
-#    # Tiempo restante hasta la salida
-#    tiempo_restante = (self.fecha_hora_salida - datetime.now()).total_seconds()
-#    # Tiempo para liberar los asientos (30 minutos antes)
-#    tiempo_para_liberar = tiempo_restante - 1800  # 1800 segundos = 30 minutos
-#    if tiempo_para_liberar > 0:
-#        # Crear y comenzar el hilo que liberará los asientos
-#        threading.Timer(tiempo_para_liberar, self.liberar_asientos_reservados).start()
-#    else:
-#        self.liberar_asientos_reservados()
+        # Tiempo para liberar los asientos (30 minutos antes)
+        tiempo_para_liberar = tiempo_restante - 1800  # 1800 segundos = 30 minutos
+        #print(f"Tiempo para liberar (30 minutos antes de la salida): {tiempo_para_liberar} segundos")
+
+        # Validar si el tiempo para liberar es mayor a 1 día (86400 segundos)
+        if tiempo_para_liberar <= 0:
+            print("El viaje ya ha pasado o está a menos de 30 minutos de la salida, liberando asientos ahora...")
+            self.liberar_asientos_reservados()
+        elif tiempo_para_liberar > 60 * 60 * 24:  # mayor a 1 día (86400 segundos)
+            print("El tiempo de espera es mayor a 1 día, liberación cancelada.")
+        else:
+            #print(f"Iniciando Timer para liberar asientos en {tiempo_para_liberar} segundos...")
+            # Crear y comenzar el hilo que liberará los asientos
+            threading.Timer(tiempo_para_liberar, self.liberar_asientos_reservados).start()
+
     
     def liberar_asientos_reservados(self):
        self.gestor_reservas.liberar_asientos_reservados()
