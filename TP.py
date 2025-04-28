@@ -129,13 +129,11 @@ class MedioPago(ABC):
         pass
 
 class ServicioExternoPago:
-    def __init__(self, m_pago:MedioPago):
-        self.medio_pago=m_pago
     def verificar_pago(self)->bool:
         return random.choice([True,False,True])
 
 class TarjetaCredito(MedioPago):
-    def __init__(self, numero: str, dni_t: int, nombre_pasajero: str, f_vencimiento: str, servicio_externo:ServicioExternoPago):
+    def __init__(self, numero: str, dni_t: int, nombre_pasajero: str, f_vencimiento: datetime, servicio_externo:ServicioExternoPago):
         self.nombre_metodo="Tarjeta de Crédito"
         self.numero = numero
         self.dni_titular = dni_t
@@ -419,7 +417,7 @@ def cargar_datos()-> ArgenTur:      # Esta clase únicamente se encarga de ya cr
     arg.reservar_pasajes(p3,datetime(2025,3,29,17,58),Asiento(3),arg.obtener_servicio(3))
     arg.reservar_pasajes(p4,datetime(2024,12,25,11,20),Asiento(19),arg.obtener_servicio(2))
 
-    servicio_externo=ServicioExternoPago(MedioPago)
+    servicio_externo=ServicioExternoPago()
     arg.realizar_compra(datetime(2025,6,12,15,35),Asiento(10),p1,arg.obtener_servicio(1),MercadoPago(3421596846,p1.obtener_email(),servicio_externo)) 
     arg.realizar_compra(datetime(2025,1,10,23,26),Asiento(15),p2,arg.obtener_servicio(2),TarjetaCredito(1234567891023564,p2.obtener_dni(),p2.obtener_nombre(),datetime(2037,10,8),servicio_externo))
 
@@ -442,6 +440,7 @@ nro_asiento=int(input("\nPor favor, ingresa el número del asiento que te gustar
 while(not arg.verificar_asiento(nro_asiento,servicio)):
     nro_asiento=int(input("¡Error! Este asiento ya ha sido seleccionado por otro pasajero. Seleccione un nuevo asiento, por favor: "))
 
+asiento = Asiento(nro_asiento)
 print("\n¡Estás a un paso de disfrutar de este maravilloso viaje! Primero, conozcamonos un poco.")
 
 nombre=input("¿Cuál es tu nombre? ")
@@ -450,23 +449,30 @@ dni=input("¿Cómo es tu DNI? ")
 email=(input("¡Último paso! Necesitamos un email para enviarte los detalles del servicio: "))
 
 pasajero=Pasajero(nombre,apellido,email,dni)
-arg.reservar_pasajes(pasajero,datetime(2025,4,28,12,00),Asiento(nro_asiento),servicio)
+arg.reservar_pasajes(pasajero,datetime(2025,4,28,12,00),asiento,servicio)
 
 arg.ver_asientos_libres(servicio)
 
 eleccion1 = int(input("\n¿Desea abonar el viaje en este momento y concretar la venta? \n1) Sí. \n2) No\n"))
-if (eleccion1 is 1):
-    serv_ext=ServicioExternoPago(MedioPago)
+if eleccion1 == 1:
+
+    serv_ext=ServicioExternoPago()
     metodo=int(input("ArgenTur acepta tres tipos de métodos de pago. Seleccione la de su preferencia.\n1) Mercado Pago. \n2) Uala. \n3) Tarjeta de Crédito \n"))
-    if(metodo is 1):
+    if metodo == 1:
         cel=int(input("Ingrese su celular, por favor: "))
-        arg.realizar_compra(datetime(2025,4,28,12,00),Asiento(nro_asiento),pasajero,servicio,MercadoPago(cel,pasajero.obtener_email(),serv_ext))
-    if(metodo is 2):
-        arg.realizar_compra(datetime(2025,4,28,12,00),Asiento(nro_asiento),pasajero,servicio,Uala(pasajero.obtener_email(),pasajero.obtener_nombre(),serv_ext))
-    if(metodo is 3):
+        medio_pago = MercadoPago(cel,pasajero.obtener_email(),serv_ext)
+    elif metodo == 2:
+        medio_pago = Uala(pasajero.obtener_email(),pasajero.obtener_nombre(),serv_ext)
+    elif metodo == 3:
         nro_tarjeta=int(input("Ingrese el número de la tarjeta: "))
         vencimiento=str(input("Ingrese la fecha de vencimiento de la tarjeta (mm/aaaa): "))
-        arg.realizar_compra(datetime(2025,4,28,12,00),Asiento(nro_asiento),pasajero,servicio,TarjetaCredito(nro_tarjeta,pasajero.obtener_dni(),pasajero.obtener_nombre(),vencimiento,serv_ext))
+        medio_pago = TarjetaCredito(nro_tarjeta,pasajero.obtener_dni(),pasajero.obtener_nombre(),vencimiento,serv_ext)
+    else:
+        print("Método de pago no válido.")
+        medio_pago = None
+
+    if medio_pago:
+        arg.realizar_compra(datetime.now(), asiento, pasajero, servicio, medio_pago)
 else:
     print("Recuerde que 30 minutos antes del viaje, perderá el asiento en caso de no abonar.")
 print("¡Muchas gracias por elegir viajar con nosotros")
