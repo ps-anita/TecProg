@@ -220,14 +220,14 @@ class GestorVentas:
     def obtener_monto_ventas_por_tiempo(self, desde: datetime, hasta: datetime, precio:float):
         cant = 0
         for venta in self.ventas:
-            if venta.obtener_fecha_hora() <= desde and venta.obtener_fecha_hora() >= hasta:
+            if desde <= venta.obtener_fecha_hora() <= hasta:
                 cant += 1
         return (precio * cant)
     def obtener_ventas_por_medio(self, medio:str, desde:datetime, hasta:datetime, precio:float):
         cant = 0
         for venta in self.ventas: 
             m_pago=venta.obtener_medio_pago()
-            if m_pago.obtener_nombre() is medio and venta.obtener_fecha_hora() <= desde and venta.fecha_hora >= hasta:
+            if m_pago.obtener_nombre() == medio and desde <= venta.obtener_fecha_hora() <= hasta:
                 cant += 1
         return (precio * cant)
 
@@ -318,7 +318,7 @@ class ArgenTur:
     def realizar_compra(self, fecha_hora: datetime, asiento: Asiento, pasajero:Pasajero, servicio_solicitado: Servicio, m_pago:MedioPago):
         return servicio_solicitado.agregar_venta(Venta(fecha_hora,asiento,pasajero,m_pago))
     
-    def verificar_asiento(nro:int, servicio: Servicio)->bool:
+    def verificar_asiento(nro_asiento:int, servicio: Servicio)->bool:
         return servicio.consultar_asiento_disponible(nro_asiento)
     
     #### MÉTODOS CONSULTAS ####
