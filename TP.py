@@ -431,7 +431,7 @@ print(f"¡Bienvenidos a ArgenTur! El lugar donde podrás cumplir el sueño de co
 arg.ver_servicios()
 
 print("¿Cuál servicio te gustaría disfrutar? Para seleccionarlo, ingresa el #número correspondiente del servicio.")
-servicio_elegido=int(input())
+servicio_elegido=int(input("¿Cuál servicio te gustaría disfrutar? Para seleccionarlo, ingresa el #número correspondiente del servicio."))
 servicio=arg.obtener_servicio(servicio_elegido)
 
 print("¡Estupendo! A continuación, te mostramos los asientos disponibles para este servicio.")
