@@ -17,9 +17,9 @@ class Asiento:
 class Unidad:
     def __init__(self, patente: str):
         self.patente = patente
-        self.asientos: list[Asiento] = [Asiento(i) for i in range(1, 51)] # genera lista con 50 asientos desocupados (list comprehension)
+        self.asientos: list[Asiento] = [Asiento(i) for i in range(1, 21)] # genera lista con 20 asientos desocupados (list comprehension)
     def verificar_asiento_libre(self, nro_asiento:int)->bool:
-        return self.asientos[nro_asiento -1].verificar_libre()
+        return self.asientos[nro_asiento - 1].verificar_libre()
     def cambiar_estado_asiento(self,nro_asiento:int):
         self.asientos[nro_asiento - 1].cambiar_estado()
     def obtener_patente(self): return self.patente
@@ -73,33 +73,32 @@ class Pasajero:
     def obtener_apellido(self): return self.apellido
    
 class Reserva:
-    def __init__(self, fecha_hora: datetime, asiento: Asiento, pasajero:Pasajero):
+    def __init__(self, fecha_hora: datetime, asiento: Asiento, pasajero:Pasajero,unidad:Unidad):
         self.fecha_hora = fecha_hora
         self.asiento = asiento
         self.pasajero = pasajero
+        self.unidad=unidad
     #consultas
     def obtener_asiento_numero(self): return self.asiento.obtener_numero()
     def obtener_fecha(self):return self.fecha_hora
     def obtener_dni_pasajero(self): return self.pasajero.obtener_dni()
+    def obtener_unidad(self): return self.unidad
 
 class GestorReservas:
-    def __init__(self, reservas: list[Reserva], unidad: Unidad):
-        self.unidad = unidad
+    def __init__(self, reservas: list[Reserva]):
         self.reservas = reservas
     #insercion | eliminación
-    def agregar_reserva(self, reserva: Reserva) -> bool:
+    def agregar_reserva(self, reserva: Reserva)->bool:
         nro_asiento = reserva.obtener_asiento_numero()
-        if not self.unidad.verificar_asiento_libre(nro_asiento):
-            print("El asiento seleccionado ya está ocupado.")
-            return False
+        unidad=reserva.obtener_unidad()
+        unidad.cambiar_estado_asiento(nro_asiento)
         self.reservas.append(reserva)
-        self.unidad.cambiar_estado_asiento(nro_asiento)
-        return True
     # liberar reserva en específico ya que se concretó la venta
     def liberar_reserva(self, nro_asiento: int):
         for reserva in self.reservas:
             if reserva.obtener_asiento_numero() == nro_asiento:
-                self.unidad.cambiar_estado_asiento(nro_asiento)
+                unidad=reserva.obtener_unidad()
+                unidad.cambiar_estado_asiento(nro_asiento)
                 self.reservas.remove(reserva)
                 break      
     #  se llama 30 min antes del viaje (las reservas que quedan no están con la venta concretada)
@@ -125,6 +124,9 @@ class MedioPago(ABC):
     @abstractmethod
     def obtener_datos_pago(self):
         pass
+    @abstractmethod
+    def obtener_nombre(self):
+        pass
 
 class ServicioExternoPago:
     def __init__(self, m_pago:MedioPago):
@@ -133,7 +135,7 @@ class ServicioExternoPago:
         return random.choice([True,False,True])
 
 class TarjetaCredito(MedioPago):
-    def __init__(self, numero: str, dni_t: int, nombre_pasajero: str, f_vencimiento: date, servicio_externo:ServicioExternoPago):
+    def __init__(self, numero: str, dni_t: int, nombre_pasajero: str, f_vencimiento: str, servicio_externo:ServicioExternoPago):
         self.nombre_metodo="Tarjeta de Crédito"
         self.numero = numero
         self.dni_titular = dni_t
@@ -141,6 +143,7 @@ class TarjetaCredito(MedioPago):
         self.fecha_vencimiento = f_vencimiento
         self.servicio_externo= servicio_externo
     def validarPago(self): return self.servicio_externo.verificar_pago()
+    def obtener_nombre(self): return self.nombre_metodo
     def obtener_datos_pago(self): return f"{self.nombre_metodo} - Nombre Titular {self.nombre_pasajero} - DNI {self.dni_titular} - Número Tarjeta {self.numero} - Vencimiento {self.fecha_vencimiento.strftime('%d/%m/%Y')}"
    
 class MercadoPago(MedioPago):
@@ -149,10 +152,9 @@ class MercadoPago(MedioPago):
         self.celular = celular
         self.email = email
         self.servicio_externo= servicio_externo
-    def validarPago(self):
-        return self.servicio_externo.verificar_pago()
-    def obtener_datos_pago(self):
-        return f"{self.nombre_metodo} - Celular {self.celular} - Email {self.email}"
+    def validarPago(self): return self.servicio_externo.verificar_pago()
+    def obtener_nombre(self): return self.nombre_metodo
+    def obtener_datos_pago(self): return f"{self.nombre_metodo} - Celular {self.celular} - Email {self.email}"
 
 class Uala(MedioPago):
     def __init__(self, email: str, nombre_t: str,servicio_externo:ServicioExternoPago):
@@ -160,10 +162,9 @@ class Uala(MedioPago):
         self.email = email
         self.nombre_titular = nombre_t
         self.servicio_externo= servicio_externo
-    def validarPago(self):
-        return self.servicio_externo.verificar_pago()
-    def obtener_datos_pago(self):
-        return f"{self.nombre_metodo} - Nombre Titular {self.nombre_titular} - Email {self.email}"
+    def validarPago(self): return self.servicio_externo.verificar_pago()
+    def obtener_nombre(self): return self.nombre_metodo
+    def obtener_datos_pago(self): return f"{self.nombre_metodo} - Nombre Titular {self.nombre_titular} - Email {self.email}"
     
 class Venta: 
     def __init__(self, _fecha_Hora: datetime, a_asiento: Asiento, p_pasajero: Pasajero, m_pago: MedioPago):
@@ -185,18 +186,27 @@ class Venta:
         print(f"- Datos Pasajero: {self.pasajero.obtener_nombre()} - DNI {self.pasajero.obtener_dni()}")
         print(f"- Asiento Reservado: {self.asiento.obtener_numero()}")
         print(f"- Medio de Pago: {self.medio_pago.obtener_datos_pago()}")
-
     def obtener_fecha_hora(self):
         return self.fecha_hora
-    
     def obtener_medio_pago(self):
-        return self.medio_pago.__class__.__name__
+        return self.medio_pago
 
 class GestorVentas:
     def __init__(self, ventas: list[Venta], gestor_reservas: GestorReservas, unidad: Unidad):
         self.ventas = ventas
         self.gestor_reservas = gestor_reservas  # Recibe GestorReservas
         self.unidad = unidad
+    def proceder_con_venta(self, venta: Venta) -> bool:
+        #Procede con la venta: verifica el pago
+        if venta.verificar_pago_valido():
+            venta.concretar_venta()
+            self.ventas.append(venta)
+            nro_asiento = venta.obtener_nro_asiento()
+            print(f"Asiento {nro_asiento} vendido a {venta.obtener_pasajero()}.")
+            return True
+        else:
+            print(f"Pago inválido para el pasajero {venta.obtener_pasajero()}. No se logró realizar la venta.")
+            return False
     def agregar_venta(self, venta: Venta) -> bool:
         nro_asiento = venta.obtener_nro_asiento()
         # Verificar si el asiento está reservado
@@ -208,22 +218,20 @@ class GestorVentas:
                 print(f"Asiento {nro_asiento} ya está reservado por otro pasajero.")
                 return False
         else:
-            # Si no está reservado, venderlo y marcar como ocupado
-            self.unidad.cambiar_estado_asiento(nro_asiento)  # Cambiar el estado del asiento a ocupado
             return self.proceder_con_venta(venta)
-
-    def proceder_con_venta(self, venta: Venta) -> bool:
-        #Procede con la venta: verifica el pago
-        if venta.verificar_pago_valido():
-            venta.concretar_venta()
-            self.ventas.append(venta)
-            nro_asiento = venta.obtener_nro_asiento()
-            print(f"Asiento {nro_asiento} vendido a {venta.obtener_pasajero()}.")
-            self.gestor_reservas.liberar_reserva(nro_asiento)
-            return True
-        else:
-            print(f"Pago inválido para el pasajero {venta.obtener_pasajero()}. No se logró realizar la venta.")
-            return False
+    def obtener_monto_ventas_por_tiempo(self, desde: datetime, hasta: datetime, precio:float):
+        cant = 0
+        for venta in self.ventas:
+            if venta.obtener_fecha_hora() <= desde and venta.obtener_fecha_hora() >= hasta:
+                cant += 1
+        return (precio * cant)
+    def obtener_ventas_por_medio(self, medio:str, desde:datetime, hasta:datetime, precio:float):
+        cant = 0
+        for venta in self.ventas: 
+            m_pago=venta.obtener_medio_pago()
+            if m_pago.obtener_nombre() is medio and venta.obtener_fecha_hora() <= desde and venta.fecha_hora >= hasta:
+                cant += 1
+        return (precio * cant)
 
 class Servicio:
     def __init__(self, unidad: Unidad, calidad: str, precio: float, itinerario: Itinerario,fecha_hora_salida: datetime, reservas: list[Reserva], ventas: list[Venta],  gestor_reservas: GestorReservas, gestor_ventas: GestorVentas):
@@ -241,7 +249,7 @@ class Servicio:
     def modificar_itinerario(self,it:Itinerario):
         self.itinerario=it
 #Inserciones
-    def agregar_reserva(self, reserva: Reserva) -> bool:
+    def _agregar_reserva(self, reserva: Reserva):
         return self.gestor_reservas.agregar_reserva(reserva)
     def agregar_venta(self,venta:Venta)->bool:
         return self.gestor_ventas.agregar_venta(venta)
@@ -252,38 +260,27 @@ class Servicio:
     def obtener_precio(self): return self.precio
     def obtener_itinerario(self): return self.itinerario.mostrar_paradas()
     def obtener_unidad(self): return self.unidad
-    def obtener_fecha_salida(self): return self.fecha_hora_salida
+    def obtener_fecha_salida(self):
+        return f"{self.fecha_hora_salida.day}/{self.fecha_hora_salida.month}/{self.fecha_hora_salida.year}"
 #liberacion de reservas (se llama 30 min antes del viaje):
     def liberar_asientos_reservados(self):
        self.gestor_reservas.liberar_asientos_reservados()
-
-    def obtener_ventas_por_tiempo(self, desde: datetime, hasta: datetime):
-        cant = 0
-        for venta in self.ventas:
-            if venta.obtener_fecha_hora() <= desde and venta.fecha_hora >= hasta:
-                cant = cant + 1
-        return (self.precio * cant)
-
-    def obtener_ventas_por_medio(self, medio):
-        cant = 0
-        for venta in self.ventas: 
-            if venta.obtener_medio_pago() == medio:
-                cant = cant + 1
-        return (self.precio * cant)
+    def consultar_asiento_disponible(self,nro_asiento:int):
+        return self.unidad.verificar_asiento_libre(nro_asiento)
+    def obtener_monto_ventas(self, desde: datetime, hasta: datetime): return self.gestor_ventas.obtener_monto_ventas_por_tiempo(desde,hasta,self.obtener_precio())
+    def discriminar_ventas_por_pagos(self,medio:str,desde:datetime, hasta:datetime): return self.gestor_ventas.obtener_ventas_por_medio(medio,desde,hasta,self.precio)
 
 #-----------------------------------------------------Factory-------------------------------------------------#
 class ServicioFactory:
     @staticmethod
-    def crear_servicio(unidad: Unidad, calidad: str, precio: float,
-                        itinerario: Itinerario, fecha_hora_salida: datetime) -> Servicio:
+    def crear_servicio(unidad: Unidad, calidad: str, precio: float, itinerario: Itinerario, fecha_hora_salida: datetime) -> Servicio:
         reservas:list[Reserva] = []
         ventas:list[Venta] = []
         
-        gestor_reservas = GestorReservas(reservas, unidad)
+        gestor_reservas = GestorReservas(reservas)
         gestor_ventas = GestorVentas(ventas, gestor_reservas, unidad)
         
-        servicio = Servicio(unidad, calidad, precio, itinerario, fecha_hora_salida,
-                             reservas, ventas, gestor_reservas, gestor_ventas)
+        servicio = Servicio(unidad, calidad, precio, itinerario, fecha_hora_salida, reservas, ventas, gestor_reservas, gestor_ventas)
         
         return servicio
     
@@ -310,9 +307,9 @@ class ArgenTur:
         self.lista_servicios.append(servicio)
 
     def reservar_pasajes(self, pasajero:Pasajero, fecha_hora_reserva: datetime, asiento: Asiento, servicio: Servicio):
-        reserva=Reserva(fecha_hora_reserva,asiento,pasajero)
-        if(servicio.agregar_reserva(reserva)):
-            print("Reserva realizada con éxito.")
+        reserva=Reserva(fecha_hora_reserva,asiento,pasajero,servicio.obtener_unidad())
+        servicio._agregar_reserva(reserva)
+        print(f"Reserva realizada! Pasajero {pasajero.nombre} {pasajero.apellido}, asiento {asiento.obtener_numero()}, servicio del {servicio.obtener_fecha_salida()}")
 
     def agregar_ciudad(self, cod: str, nombre: str, prov: str):
         self.lista_ciudades.append(Ciudad(cod,nombre,prov))
@@ -321,10 +318,13 @@ class ArgenTur:
         self.lista_unidades.append(Unidad(patente))
     
     def realizar_compra(self, fecha_hora: datetime, asiento: Asiento, pasajero:Pasajero, servicio_solicitado: Servicio, m_pago:MedioPago):
-        servicio_solicitado.agregar_venta(Venta(fecha_hora,asiento,pasajero,m_pago))
+        return servicio_solicitado.agregar_venta(Venta(fecha_hora,asiento,pasajero,m_pago))
+    
+    def verificar_asiento(nro:int, servicio: Servicio)->bool:
+        return servicio.consultar_asiento_disponible(nro_asiento)
     
     #### MÉTODOS CONSULTAS ####
-    def obtener_itinerario(self,nro:int)-> Itinerario:   # Esto lo pensé así: Cada itineraro está enumerado (línea x), el encargado de crear servicios va a ver
+    def obtener_itinerario(self,nro:int)-> Itinerario:   # Esto lo pensé así: Cada itineraro está enumerado (línea 340), el encargado de crear servicios va a ver
         return self.lista_itinerarios[nro-1]             # la lista de it, elegir el # de it y al colocar ese número en este método, le devuelve toda la info del it que quiere
         
     def obtener_servicio(self, nro:int)-> Servicio:
@@ -348,8 +348,9 @@ class ArgenTur:
 
     def ver_asientos_libres(self, s: Servicio):
         unidad=s.obtener_unidad()
-        print(f"Asientos libres de Unidad {unidad.obtener_patente()}")
+        print(f"Asientos libres de la unidad {unidad.obtener_patente()}")
         s.obtener_asientos_libres()
+        print()
     
     def ver_servicios(self):
         cont=1 #También es por estetica
@@ -360,61 +361,115 @@ class ArgenTur:
             print(f"Calidad: {servicio.obtener_calidad()} - Unidad: {uni.obtener_patente()} - Precio ${servicio.obtener_precio()}")
             print("Itinerario del Servicio:")
             servicio.obtener_itinerario()
-            print("Asientos Libres:")
-            uni.obtener_asientos_libres()
             print()
             cont+=1
-
-    def ver_total_por_fecha(self, desde: datetime, hasta: datetime):
+    def ver_monto_total_por_fecha(self, desde: datetime, hasta: datetime)->int:
         total = 0
         for servicio in self.lista_servicios:
-            total = total + servicio.obtener_ventas_por_tiempo(desde, hasta)
+            total += servicio.obtener_monto_ventas(desde, hasta)
         return total
-
-    def ver_total_por_medio(self, medio: str):
+    def ver_total_por_medio_pago(self, medio: str,desde: datetime,hasta: datetime)->int:
         total = 0
         for servicio in self.lista_servicios:
-            total = total + servicio.obtener_ventas_por_medio(medio)
+            total = total + servicio.discriminar_ventas_por_pagos(medio,desde,hasta)
         return total
     
-################################################ MAIN ################################################
+    def generar_informe(self,desde: datetime,hasta: datetime):
+        print(f"INFORME ARGENTUR {desde.day}/{desde.month}/{desde.year} - {hasta.day}/{hasta.month}/{hasta.year}")
+        print(f"- Monto de ventas totales facturados: ${self.ver_monto_total_por_fecha(desde,hasta)}")
+        print(f"- Cantidad de pagos realizados por:")
+        print(f"  - Mercado Pago: {self.ver_total_por_medio_pago('Mercado Pago',desde,hasta)}")
+        print(f"  - Ualá: {self.ver_total_por_medio_pago('Ualá',desde,hasta)}")
+        print(f"  - Tarjeta de Crédito: {self.ver_total_por_medio_pago('Tarjeta de Crédito',desde,hasta)}")
 
-arg=ArgenTur()
-c1=Ciudad(1,"a","a")
-c2=Ciudad(2,"b","b")
-c3=Ciudad(3,"c","c")
-c4=Ciudad(4,"d","d")
-c5=Ciudad(5,"e","e")
+    def verificar_asiento(self,nro_asiento:int ,servicio:Servicio)->bool:
+        return servicio.consultar_asiento_disponible(nro_asiento)
+    
+def cargar_datos()-> ArgenTur:      # Esta clase únicamente se encarga de ya crear servicios, ciudades e itinerarios para usar el programa.
+    arg=ArgenTur()
+    
+    c1=Ciudad("3101","Paraná","Entre Ríos")
+    c2=Ciudad("3000","Santa Fe","Santa Fe")
+    c3=Ciudad("C1000","CABA","Buenos Aires")
+    c4=Ciudad("4400","Los Noques","Salta")
+    c5=Ciudad("T4000","San Miguel de Túcuman","Túcuman")
+    c6=Ciudad("V9410","Ushuaia","Tierra del Fuego")
+    c7=Ciudad("R8400","Bariloche","Río Negro")
 
-a1=Asiento(1)
-a2=Asiento(22)
-a3=Asiento(3)
+    it1=[(c1,datetime(2025,8,2,8,00)),(c2,datetime(2025,8,2,9,00)),(c3,datetime(2025,8,17,00))]
+    it2=[(c3,datetime(2025,10,15,10,00)),(c2,datetime(2025,10,15,16,00)),(c5,datetime(2025,10,16,4,00)),(c4,datetime(2025,10,16,11,00))]
+    it3=[(c6,datetime(2025,5,5,13,00)),(c7,datetime(2025,5,5,15,00))]
 
-p1=Pasajero("Viviana","Santucci","vivi@fich.unl",12345678)
-p2=Pasajero("Pablo","Novara","cucarachasracing@fich.unl",87654321)
+    arg.crear_itinerario(it1)
+    arg.crear_itinerario(it2)
+    arg.crear_itinerario(it3)
 
-tu=[(c1,datetime(2025,4,27,13,00)),(c2,datetime(2025,4,28,14,00)),(c3,datetime(2025,4,29,15,00))]
-tu2=[(c4,datetime(2026,3,15,10,00)),(c5,datetime(2026,3,15,16,00))]
+    arg.crear_servicio(Unidad("AAA 505"),"Premium",50000,arg.obtener_itinerario(1),datetime(2025,8,2,8,00))
+    arg.crear_servicio(Unidad("AAB 000"),"Estándar",30500,arg.obtener_itinerario(2),datetime(2025,10,15,10,00))
+    arg.crear_servicio(Unidad("AAB 153"),"Estándar",20000,arg.obtener_itinerario(3),datetime(2025,5,5,13,00))
 
-arg.crear_itinerario(tu)
-arg.crear_itinerario(tu2)
+    # Reservo algunos lugares
+    p1=Pasajero("Viviana","Santucci","vivianasantucci@fich.unl",2531462)
+    p2=Pasajero("Jimena","Bourlot","jime_Bourlot@fich.unl",30654892)
+    p3=Pasajero("Federico","Castoldi","castoldi@fich.unl",4562137)
+    p4=Pasajero("Jesús Exequiel","Benavídez","jesusbenavidez@fich.unl",3576412)
 
-arg.crear_servicio(Unidad("A5"),"estandar",100,arg.obtener_itinerario(1),datetime(2025,4,28,14,00))
-arg.crear_servicio(Unidad("A3"),"estandar",100,arg.obtener_itinerario(2),datetime(2026,4,28,14,00))
+    arg.reservar_pasajes(p1,datetime(2025,6,12,15,35),Asiento(10),arg.obtener_servicio(1))
+    arg.reservar_pasajes(p2,datetime(2025,1,10,23,26),Asiento(15),arg.obtener_servicio(2))
+    arg.reservar_pasajes(p3,datetime(2025,3,29,17,58),Asiento(3),arg.obtener_servicio(3))
+    arg.reservar_pasajes(p4,datetime(2024,12,25,11,20),Asiento(19),arg.obtener_servicio(2))
+
+    servicio_externo=ServicioExternoPago(MedioPago)
+    arg.realizar_compra(datetime(2025,6,12,15,35),Asiento(10),p1,arg.obtener_servicio(1),MercadoPago(3421596846,p1.obtener_email(),servicio_externo)) 
+    arg.realizar_compra(datetime(2025,1,10,23,26),Asiento(15),p2,arg.obtener_servicio(2),TarjetaCredito(1234567891023564,p2.obtener_dni(),p2.obtener_nombre(),datetime(2037,10,8),servicio_externo))
+
+    return arg
+
+################################################ SIMULACIÓN DE PROGRAMA ################################################
+arg=cargar_datos()
+
+print(f"¡Bienvenidos a ArgenTur! El lugar donde podrás cumplir el sueño de conocer los lugares más atractivos del país. \n A continuación podrás conocer todos los servicios que tenemos para vos. \n")
 arg.ver_servicios()
-s1=arg.obtener_servicio(1)
-s2=arg.obtener_servicio(2)
 
-print()
-print("RESERVA VIVIANA")
-arg.reservar_pasajes(p1,datetime(15,2,9,15,23),a1,s1)
-print()
-print("RESERVA PABLO")
-arg.reservar_pasajes(p2,datetime(15,2,9,15,23),a1,s1)
+print("¿Cuál servicio te gustaría disfrutar? Para seleccionarlo, ingresa el #número correspondiente del servicio.")
+servicio_elegido=int(input())
+servicio=arg.obtener_servicio(servicio_elegido)
 
-print("RESERVA PABLO INTENTO 2")
-arg.reservar_pasajes(p2,datetime(15,2,9,15,23),a2,s1)
+print("¡Estupendo! A continuación, te mostramos los asientos disponibles para este servicio.")
+arg.ver_asientos_libres(servicio)
 
-print()
-print("ASIENTOS DISPONIBLES")
-arg.ver_asientos_libres(s1)
+nro_asiento=int(input("\nPor favor, ingresa el número del asiento que te gustaría reservar: "))
+while(not arg.verificar_asiento(nro_asiento,servicio)):
+    nro_asiento=int(input("¡Error! Este asiento ya ha sido seleccionado por otro pasajero. Seleccione un nuevo asiento, por favor: "))
+
+print("\n¡Estás a un paso de disfrutar de este maravilloso viaje! Primero, conozcamonos un poco.")
+
+nombre=input("¿Cuál es tu nombre? ")
+apellido=input("¿Y tu apellido? ")
+dni=input("¿Cómo es tu DNI? ")
+email=(input("¡Último paso! Necesitamos un email para enviarte los detalles del servicio: "))
+
+pasajero=Pasajero(nombre,apellido,email,dni)
+arg.reservar_pasajes(pasajero,datetime(2025,4,28,12,00),Asiento(nro_asiento),servicio)
+
+arg.ver_asientos_libres(servicio)
+
+eleccion1 = int(input("\n¿Desea abonar el viaje en este momento y concretar la venta? \n1) Sí. \n2) No\n"))
+if (eleccion1 is 1):
+    serv_ext=ServicioExternoPago(MedioPago)
+    metodo=int(input("ArgenTur acepta tres tipos de métodos de pago. Seleccione la de su preferencia.\n1) Mercado Pago. \n2) Uala. \n3) Tarjeta de Crédito \n"))
+    if(metodo is 1):
+        cel=int(input("Ingrese su celular, por favor: "))
+        arg.realizar_compra(datetime(2025,4,28,12,00),Asiento(nro_asiento),pasajero,servicio,MercadoPago(cel,pasajero.obtener_email(),serv_ext))
+    if(metodo is 2):
+        arg.realizar_compra(datetime(2025,4,28,12,00),Asiento(nro_asiento),pasajero,servicio,Uala(pasajero.obtener_email(),pasajero.obtener_nombre(),serv_ext))
+    if(metodo is 3):
+        nro_tarjeta=int(input("Ingrese el número de la tarjeta: "))
+        vencimiento=str(input("Ingrese la fecha de vencimiento de la tarjeta (mm/aaaa): "))
+        arg.realizar_compra(datetime(2025,4,28,12,00),Asiento(nro_asiento),pasajero,servicio,TarjetaCredito(nro_tarjeta,pasajero.obtener_dni(),pasajero.obtener_nombre(),vencimiento,serv_ext))
+else:
+    print("Recuerde que 30 minutos antes del viaje, perderá el asiento en caso de no abonar.")
+print("¡Muchas gracias por elegir viajar con nosotros")
+
+print("\nGENERANDO INFORME...\n")
+arg.generar_informe(datetime(2000,1,1),datetime(2025,12,31))
