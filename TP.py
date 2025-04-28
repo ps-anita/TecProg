@@ -257,17 +257,20 @@ class Servicio:
     def obtener_calidad(self): return self.calidad
     def obtener_precio(self): return self.precio
     def obtener_itinerario(self): return self.itinerario.mostrar_paradas()
+    def obtener_llegada(self): return self.itinerario.obtener_llegada()
     def obtener_unidad(self): return self.unidad
     def obtener_fecha_salida(self):
         return f"{self.fecha_hora_salida.day}/{self.fecha_hora_salida.month}/{self.fecha_hora_salida.year}"
-#liberacion de reservas (se llama 30 min antes del viaje):
-    def liberar_asientos_reservados(self):
-       self.gestor_reservas.liberar_asientos_reservados()
+
     def consultar_asiento_disponible(self,nro_asiento:int):
         return self.unidad.verificar_asiento_libre(nro_asiento)
     def obtener_monto_ventas(self, desde: datetime, hasta: datetime): return self.gestor_ventas.obtener_monto_ventas_por_tiempo(desde,hasta,self.obtener_precio())
     def discriminar_ventas_por_pagos(self,medio:str,desde:datetime, hasta:datetime): return self.gestor_ventas.obtener_ventas_por_medio(medio,desde,hasta,self.precio)
+    
 
+    #liberacion de reservas (se llama 30 min antes del viaje):
+    def liberar_asientos_reservados(self):
+       self.gestor_reservas.liberar_asientos_reservados()
 #-----------------------------------------------------Factory-------------------------------------------------#
 class ServicioFactory:
     @staticmethod
@@ -371,6 +374,17 @@ class ArgenTur:
         for servicio in self.lista_servicios:
             total = total + servicio.discriminar_ventas_por_pagos(medio,desde,hasta)
         return total
+
+    def ver_cantidad_viajes_por_destino(self, desde: datetime, hasta: datetime):
+        for itinerario in self.lista_itinerarios:
+            destino = itinerario.obtener_llegada()
+            print(f"  - Destino: {destino["ciudad"].obtener_nombre()},  {destino['ciudad'].obtener_provincia()} ")  # Para ver la estructura del diccionario destino
+            cantidad_viajes = 0
+            for servicio in self.lista_servicios:
+                llegada_servicio = servicio.obtener_llegada()
+                if llegada_servicio["ciudad"].obtener_nombre() == destino["ciudad"].obtener_nombre() and desde <= llegada_servicio["fecha_hora"] <= hasta:
+                    cantidad_viajes = cantidad_viajes + 1
+            print(f"     - Viajes: {cantidad_viajes}")
     
     def generar_informe(self,desde: datetime,hasta: datetime):
         print(f"INFORME ARGENTUR {desde.day}/{desde.month}/{desde.year} - {hasta.day}/{hasta.month}/{hasta.year}")
@@ -379,7 +393,8 @@ class ArgenTur:
         print(f"  - Mercado Pago: {self.ver_total_por_medio_pago("Mercado Pago",desde,hasta)}")
         print(f"  - Ualá: {self.ver_total_por_medio_pago('Ualá',desde,hasta)}")
         print(f"  - Tarjeta de Crédito: {self.ver_total_por_medio_pago("Tarjeta de Crédito",desde,hasta)}")
-
+        print(f"- Cantidad de viajes realizados por localidad: ")
+        self.ver_cantidad_viajes_por_destino(desde,hasta)
 
     def verificar_asiento(self,nro_asiento:int ,servicio:Servicio)->bool:
         return servicio.consultar_asiento_disponible(nro_asiento)
@@ -451,6 +466,7 @@ email=(input("¡Último paso! Necesitamos un email para enviarte los detalles de
 
 pasajero=Pasajero(nombre,apellido,email,dni)
 arg.reservar_pasajes(pasajero,datetime(2025,4,28,12,00),asiento,servicio)
+
 
 arg.ver_asientos_libres(servicio)
 
