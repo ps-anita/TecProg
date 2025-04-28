@@ -376,9 +376,9 @@ class ArgenTur:
         print(f"INFORME ARGENTUR {desde.day}/{desde.month}/{desde.year} - {hasta.day}/{hasta.month}/{hasta.year}")
         print(f"- Monto de ventas totales facturados: ${self.ver_monto_total_por_fecha(desde,hasta)}")
         print(f"- Cantidad de pagos realizados por:")
-        print(f"  - Mercado Pago: {self.ver_total_por_medio_pago('Mercado Pago',desde,hasta)}")
-        print(f"  - Ualá: {self.ver_total_por_medio_pago('Ualá',desde,hasta)}")
-        print(f"  - Tarjeta de Crédito: {self.ver_total_por_medio_pago('Tarjeta de Crédito',desde,hasta)}")
+        print(f"  - Mercado Pago: {self.ver_total_por_medio_pago("Mercado Pago",desde,hasta)}")
+        print(f"  - Ualá: {self.ver_total_por_medio_pago("Ualá",desde,hasta)}")
+        print(f"  - Tarjeta de Crédito: {self.ver_total_por_medio_pago("Tarjeta de Crédito",desde,hasta)}")
 
     def verificar_asiento(self,nro_asiento:int ,servicio:Servicio)->bool:
         return servicio.consultar_asiento_disponible(nro_asiento)
