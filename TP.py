@@ -18,8 +18,6 @@ class Unidad:
     def __init__(self, patente: str):
         self.patente = patente
         self.asientos: list[Asiento] = [Asiento(i) for i in range(1, 51)] # genera lista con 50 asientos desocupados (list comprehension)
-    # def obtener_asientos_libres(self)->list[Asiento]:
-    #     return [asiento for asiento in self.asientos if asiento.verificar_libre()] #genera una lista con los asientos libres  (list comprehension)
     def verificar_asiento_libre(self, nro_asiento:int)->bool:
         return self.asientos[nro_asiento -1].verificar_libre()
     def cambiar_estado_asiento(self,nro_asiento:int):
@@ -181,7 +179,7 @@ class Venta:
     def obtener_nro_asiento(self):
         return self.asiento.obtener_numero()
     def obtener_pasajero(self):
-        return self.pasajero.obtener_nombre + self.pasajero.obtener_apellido
+        return self.pasajero.obtener_nombre() + " " + self.pasajero.obtener_apellido()
     def obtener_registro_venta(self):
         print(f"Registro de Venta - {self.fecha_hora.day}/{self.fecha_hora.month}/{self.fecha_hora.year} {self.fecha_hora.strftime('%H:%M:%S')}")
         print(f"- Datos Pasajero: {self.pasajero.obtener_nombre()} - DNI {self.pasajero.obtener_dni()}")
@@ -226,20 +224,20 @@ class GestorVentas:
         else:
             print(f"Pago inválido para el pasajero {venta.obtener_pasajero()}. No se logró realizar la venta.")
             return False
-   
+
 class Servicio:
-    def __init__(self, unidad: Unidad, calidad: str, precio: float, itinerario: Itinerario,fecha_hora_salida:datetime):
+    def __init__(self, unidad: Unidad, calidad: str, precio: float, itinerario: Itinerario,fecha_hora_salida: datetime, reservas: list[Reserva], ventas: list[Venta],  gestor_reservas: GestorReservas, gestor_ventas: GestorVentas):
         self.unidad = unidad
         self.calidad = calidad
         self.precio = precio
         self.itinerario = itinerario
-        self.ventas: list[Venta] = []
-        self.reservas: list[Reserva] = []
-        self.gestor_reservas = GestorReservas(self.reservas, self.unidad)
-        self.gestor_ventas = GestorVentas(self.ventas,self.gestor_reservas,self.unidad)
-        self.fecha_hora_salida=fecha_hora_salida
-    def modificar_precio(self,precioNuevo):
-        self.precio=precioNuevo
+        self.ventas = ventas
+        self.reservas = reservas
+        self.gestor_reservas = gestor_reservas
+        self.gestor_ventas = gestor_ventas
+        self.fecha_hora_salida= fecha_hora_salida
+    def modificar_precio(self,precio_nuevo):
+        self.precio=precio_nuevo
     def modificar_itinerario(self,it:Itinerario):
         self.itinerario=it
 #Inserciones
@@ -273,7 +271,22 @@ class Servicio:
                 cant = cant + 1
         return (self.precio * cant)
 
+#-----------------------------------------------------Factory-------------------------------------------------#
+class ServicioFactory:
+    @staticmethod
+    def crear_servicio(unidad: Unidad, calidad: str, precio: float,
+                        itinerario: Itinerario, fecha_hora_salida: datetime) -> Servicio:
+        reservas:list[Reserva] = []
+        ventas:list[Venta] = []
         
+        gestor_reservas = GestorReservas(reservas, unidad)
+        gestor_ventas = GestorVentas(ventas, gestor_reservas, unidad)
+        
+        servicio = Servicio(unidad, calidad, precio, itinerario, fecha_hora_salida,
+                             reservas, ventas, gestor_reservas, gestor_ventas)
+        
+        return servicio
+    
 ################################################ CLASE SISTEMA ################################################
 class ArgenTur:
     def __init__(self):
@@ -282,6 +295,7 @@ class ArgenTur:
         self.lista_ciudades: list[Ciudad] = []
         self.lista_itinerarios: list[Itinerario] = []
         self.lista_unidades: list[Unidad]
+        self.servicio_factory = ServicioFactory()
 
     #### MÉTODOS AGREGAR Y CREAR ####
     # Recibe una lista de tuplas de cada ciudad con su fecha y hora de salida
@@ -292,7 +306,8 @@ class ArgenTur:
         self.lista_itinerarios.append(it)
 
     def crear_servicio(self, unidad: Unidad, calidad:str, precio:float, itinerario: Itinerario,fecha_hora: datetime):
-        self.lista_servicios.append(Servicio(unidad,calidad,precio,itinerario,fecha_hora))
+        servicio = self.servicio_factory.crear_servicio(unidad, calidad, precio, itinerario, fecha_hora)
+        self.lista_servicios.append(servicio)
 
     def reservar_pasajes(self, pasajero:Pasajero, fecha_hora_reserva: datetime, asiento: Asiento, servicio: Servicio):
         reserva=Reserva(fecha_hora_reserva,asiento,pasajero)
@@ -303,7 +318,7 @@ class ArgenTur:
         self.lista_ciudades.append(Ciudad(cod,nombre,prov))
         
     def agregar_unidad(self,patente: str):
-        self.lista_unidades(Unidad(patente))
+        self.lista_unidades.append(Unidad(patente))
     
     def realizar_compra(self, fecha_hora: datetime, asiento: Asiento, pasajero:Pasajero, servicio_solicitado: Servicio, m_pago:MedioPago):
         servicio_solicitado.agregar_venta(Venta(fecha_hora,asiento,pasajero,m_pago))
