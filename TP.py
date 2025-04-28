@@ -229,7 +229,14 @@ class GestorVentas:
             m_pago=venta.obtener_medio_pago()
             if m_pago.obtener_nombre() == medio and desde <= venta.obtener_fecha_hora() <= hasta:
                 cant += 1
-        return (precio * cant)
+        return precio * cant
+    def obtener_cantidad_ventas_por_medio(self, medio:str, desde:datetime, hasta:datetime):
+        cant = 0
+        for venta in self.ventas: 
+            m_pago=venta.obtener_medio_pago()
+            if m_pago.obtener_nombre() == medio and desde <= venta.obtener_fecha_hora() <= hasta:
+                cant += 1
+        return cant
 
 class Servicio:
     def __init__(self, unidad: Unidad, calidad: str, precio: float, itinerario: Itinerario,fecha_hora_salida: datetime, reservas: list[Reserva], ventas: list[Venta],  gestor_reservas: GestorReservas, gestor_ventas: GestorVentas):
@@ -266,6 +273,7 @@ class Servicio:
         return self.unidad.verificar_asiento_libre(nro_asiento)
     def obtener_monto_ventas(self, desde: datetime, hasta: datetime): return self.gestor_ventas.obtener_monto_ventas_por_tiempo(desde,hasta,self.obtener_precio())
     def discriminar_ventas_por_pagos(self,medio:str,desde:datetime, hasta:datetime): return self.gestor_ventas.obtener_ventas_por_medio(medio,desde,hasta,self.precio)
+    def obtener_cantidad_ventas_por_medio(self, medio:str,desde:datetime,hasta:datetime):return self.gestor_ventas.obtener_cantidad_ventas_por_medio(medio,desde,hasta)
     
 
     #liberacion de reservas (se llama 30 min antes del viaje):
@@ -374,6 +382,11 @@ class ArgenTur:
         for servicio in self.lista_servicios:
             total = total + servicio.discriminar_ventas_por_pagos(medio,desde,hasta)
         return total
+    def ver_cantidad_por_medio_pago(self, medio: str,desde: datetime,hasta: datetime)->int:
+        cantidad = 0
+        for servicio in self.lista_servicios:
+            cantidad = cantidad + servicio.obtener_cantidad_ventas_por_medio(medio,desde,hasta)
+        return cantidad
 
     def ver_cantidad_viajes_por_destino(self, desde: datetime, hasta: datetime):
         for itinerario in self.lista_itinerarios:
@@ -390,9 +403,9 @@ class ArgenTur:
         print(f"INFORME ARGENTUR {desde.day}/{desde.month}/{desde.year} - {hasta.day}/{hasta.month}/{hasta.year}")
         print(f"- Monto de ventas totales facturados: ${self.ver_monto_total_por_fecha(desde,hasta)}")
         print(f"- Cantidad de pagos realizados por:")
-        print(f"  - Mercado Pago: {self.ver_total_por_medio_pago("Mercado Pago",desde,hasta)}")
-        print(f"  - Ualá: {self.ver_total_por_medio_pago('Ualá',desde,hasta)}")
-        print(f"  - Tarjeta de Crédito: {self.ver_total_por_medio_pago("Tarjeta de Crédito",desde,hasta)}")
+        print(f"  - Mercado Pago: {self.ver_cantidad_por_medio_pago("Mercado Pago",desde,hasta)}")
+        print(f"  - Ualá: {self.ver_cantidad_por_medio_pago('Ualá',desde,hasta)}")
+        print(f"  - Tarjeta de Crédito: {self.ver_cantidad_por_medio_pago("Tarjeta de Crédito",desde,hasta)}")
         print(f"- Cantidad de viajes realizados por localidad: ")
         self.ver_cantidad_viajes_por_destino(desde,hasta)
 
